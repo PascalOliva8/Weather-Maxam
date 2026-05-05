@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operaciones Globales – Clima</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',sans-serif;background:#07101f;color:#ddeeff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  header{padding:11px 22px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
+  header h1{font-size:14px;font-weight:700}
+  .sub{font-size:11px;color:#556680;margin-top:2px}
+  .legend{display:flex;gap:12px;font-size:10.5px;color:#556680;align-items:center;flex-shrink:0}
+  .legend span{display:flex;align-items:center;gap:4px}
+  .ldot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
+  #wrap{flex:1;position:relative;overflow:hidden}
+  #map{width:100%;height:100%}
+  .ocean{fill:#060d1a}
+  .gline{fill:none;stroke:#0c1724;stroke-width:.4}
+  .land{fill:#0f1929;stroke:#182840;stroke-width:.4}
+  .land.op{fill:#122040;stroke:#1d3d72;stroke-width:.7}
+  .pin circle.bg{fill:rgba(0,200,255,.13);transition:all .3s}
+  .pin circle.dot{fill:#00c8ff;stroke:#fff;stroke-width:1.1;cursor:pointer;transition:all .15s}
+  .pin.warn circle.dot{fill:#ffaa00;stroke:#fff}
+  .pin.warn circle.bg{fill:rgba(255,170,0,.2)}
+  .pin.crit circle.dot{fill:#ff3333;stroke:#fff}
+  .pin.crit circle.bg{fill:rgba(255,50,50,.22)}
+  .pin:hover circle.dot{r:7}
+  .pin text{font-size:8px;fill:#90bcd8;pointer-events:none;text-anchor:middle}
+  .pin.warn text{fill:#ffd980}
+  .pin.crit text{fill:#ffaaaa}
+
+  #popup{position:absolute;display:none;z-index:200;background:#07101f;border:1px solid #1a3360;border-radius:14px;width:295px;box-shadow:0 10px 55px rgba(0,60,220,.5);overflow:hidden}
+  .ph{background:linear-gradient(135deg,#0d1e50,#08122e);padding:12px 15px 10px;display:flex;justify-content:space-between;align-items:flex-start}
+  .ph .cn{font-size:14px;font-weight:700}
+  .ph .cl{font-size:10px;color:#6688bb;margin-top:2px}
+  .ph button{background:none;border:none;color:#446;font-size:16px;cursor:pointer;line-height:1;padding:0;flex-shrink:0}
+  .abanner{padding:7px 14px;font-size:11px;font-weight:600;display:none;gap:6px;align-items:flex-start;line-height:1.5}
+  .abanner.show{display:flex}
+  .abanner.warn{background:rgba(255,160,0,.13);border-bottom:1px solid rgba(255,160,0,.28);color:#ffcc55}
+  .abanner.crit{background:rgba(255,40,40,.14);border-bottom:1px solid rgba(255,40,40,.3);color:#ff8888}
+  .pb{padding:13px 15px 10px}
+  .row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .row1 .ico{font-size:38px;line-height:1}
+  .row1 .tr{text-align:right}
+  .row1 .tv{font-size:36px;font-weight:800;color:#00c8ff;line-height:1}
+  .row1 .tc{font-size:10px;color:#556680;margin-top:3px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:13px}
+  .card{background:rgba(255,255,255,.046);border-radius:8px;padding:8px 6px;text-align:center}
+  .card .v{font-size:17px;font-weight:700;line-height:1}
+  .card .l{font-size:9.5px;color:#556070;margin-top:4px}
+  .v.hi{color:#ff6644}.v.lo{color:#44aaff}.v.rn{color:#33ddaa}
+  .fct{font-size:10px;color:#556680;margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px}
+  .fcw{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .fcd{background:rgba(255,255,255,.042);border-radius:7px;padding:6px 3px;text-align:center}
+  .fcd.today{border:1px solid #234080}
+  .fcd .dow{font-size:8px;color:#6680a0;margin-bottom:3px}
+  .fcd .fi{font-size:15px;line-height:1;margin-bottom:3px}
+  .fcd .fh{font-size:10px;font-weight:700;color:#ff7755}
+  .fcd .fl{font-size:9.5px;color:#4499ff;margin-top:1px}
+  .fcd .fr{font-size:8.5px;color:#33ddaa;margin-top:2px}
+  .pf{padding:5px 15px 10px;font-size:9.5px;color:#2e3d50;text-align:center}
+  .loading{text-align:center;padding:22px;color:#3a5060;font-size:12px}
+  .err{color:#ff5566;text-align:center;padding:18px;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🌍 Operaciones Globales – Clima en Tiempo Real</h1>
+    <div class="sub">Temperatura actual · Máx/Mín · Precipitación · Pronóstico 7 días · Haz clic en un pin</div>
+  </div>
+  <div class="legend">
+    <span><span class="ldot" style="background:#122040;border:1px solid #1d3d72"></span>País operaciones</span>
+    <span><span class="ldot" style="background:#00c8ff"></span>Normal</span>
+    <span><span class="ldot" style="background:#ffaa00"></span>⚠️ Alerta</span>
+    <span><span class="ldot" style="background:#ff3333"></span>🔴 Crítico</span>
+  </div>
+</header>
+<div id="wrap">
+  <svg id="map" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+<div id="popup">
+  <div class="ph">
+    <div><div class="cn" id="pc"></div><div class="cl" id="pl"></div></div>
+    <button onclick="closePopup()">✕</button>
+  </div>
+  <div class="abanner" id="ab"></div>
+  <div class="pb" id="pb"><div class="loading">⏳ Cargando...</div></div>
+  <div class="pf" id="pf"></div>
+</div>
+<script>
+const CITIES=[
+  {name:"Elenita",         loc:"Antofagasta, Chile",        lat:-23.65,lon:-70.40},
+  {name:"Escondida",       loc:"Antofagasta, Chile",        lat:-24.27,lon:-69.07},
+  {name:"Cocachacra",      loc:"Lima, Perú",                lat:-17.05,lon:-71.75},
+  {name:"Las Bambas",      loc:"Challhuahuacho, Perú",      lat:-14.07,lon:-72.17},
+  {name:"Lumwana",         loc:"Lumwana, Zambia",           lat:-12.38,lon:25.83},
+  {name:"Lafigué",         loc:"Lafigué, Costa de Marfil",  lat:8.23,lon:-6.15},
+  {name:"Perseus",         loc:"Ayanfuri, Ghana",           lat:5.88,lon:-1.97},
+  {name:"Kiaka",           loc:"Niarba, Burkina Faso",      lat:11.50,lon:-3.20},
+  {name:"Houndé",          loc:"Houndé, Burkina Faso",      lat:11.49,lon:-3.01},
+  {name:"Sukari",          loc:"Marsa Alam, Egipto",        lat:24.88,lon:34.87},
+  {name:"Chesterfield",    loc:"Chesterfield, UK",          lat:53.24,lon:-1.42},
+  {name:"Ust-Kamenogorsk", loc:"Oskemen, Kazajistán",       lat:49.98,lon:82.61},
+  {name:"McLarty",         loc:"Yarloop, Australia",        lat:-32.95,lon:115.90},
+  {name:"Newman",          loc:"West Australia, Australia", lat:-23.36,lon:119.73},
+];
+// Historical normal ranges [tMin, tMax, rainAlertMm]
+const NORMS={
+  "Elenita":        [8,32,12],"Escondida":       [4,34,8],
+  "Cocachacra":     [10,32,20],"Las Bambas":     [-6,18,25],
+  "Lumwana":        [14,38,30],"Lafigué":        [20,40,35],
+  "Perseus":        [22,38,30],"Kiaka":          [19,42,30],
+  "Houndé":         [19,42,30],"Sukari":         [18,46,5],
+  "Chesterfield":   [-4,28,20],"Ust-Kamenogorsk":[-25,36,18],
+  "McLarty":        [5,43,20],"Newman":          [7,46,14],
+};
+const OPS=new Set([152,604,894,384,288,854,818,826,398,36]);
+const DOW=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+const pins={};
+
+function emoji(c){if(c===0)return"☀️";if(c<=2)return"⛅";if(c<=3)return"☁️";if(c<=49)return"🌫️";if(c<=59)return"🌦️";if(c<=69)return"🌧️";if(c<=79)return"❄️";if(c<=84)return"🌧️";return"⛈️";}
+function label(c){if(c===0)return"Despejado";if(c<=2)return"Parcialmente nublado";if(c<=3)return"Nublado";if(c<=49)return"Niebla";if(c<=59)return"Llovizna";if(c<=69)return"Lluvia";if(c<=79)return"Nieve";if(c<=84)return"Lluvia intensa";return"Tormenta";}
+function proj(lat,lon){return[(lon+180)*(960/360),(90-lat)*(500/180)];}
+function mk(tag,attrs){const e=document.createElementNS("http://www.w3.org/2000/svg",tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));return e;}
+
+function alertLevel(name,temp,rain){
+  const[mn,mx,ra]=NORMS[name]||[0,50,30];
+  const critT=temp<mn-10||temp>mx+8, critR=rain>=ra*2;
+  const warnT=temp<mn||temp>mx, warnR=rain>=ra;
+  if(critT||critR)return"crit";
+  if(warnT||warnR)return"warn";
+  return"ok";
+}
+function alertMessages(name,temp,rain){
+  const[mn,mx,ra]=NORMS[name]||[0,50,30];
+  const msgs=[];
+  if(rain>=ra)msgs.push(`🌧️ Lluvia intensa: ${rain} mm (umbral normal: ${ra} mm)`);
+  if(temp>mx)msgs.push(`🔥 Calor inusual: ${temp}°C (máx. normal: ${mx}°C)`);
+  if(temp<mn)msgs.push(`🥶 Frío inusual: ${temp}°C (mín. normal: ${mn}°C)`);
+  return msgs;
+}
+
+async function loadPinColors(){
+  await Promise.all(CITIES.map(async city=>{
+    try{
+      const d=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m&daily=precipitation_sum&timezone=auto&forecast_days=1`)).json();
+      const t=d.current.temperature_2m, r=d.daily.precipitation_sum[0]??0;
+      const lv=alertLevel(city.name,t,r);
+      const g=pins[city.name];
+      if(g&&lv!=="ok")g.setAttribute("class",`pin ${lv}`);
+    }catch(e){}
+  }));
+}
+
+function drawGrid(svg){
+  const g=mk("g",{});
+  for(let lo=-180;lo<=180;lo+=30){const[x]=proj(0,lo);const l=mk("line",{class:"gline",x1:x,y1:0,x2:x,y2:500});g.appendChild(l);}
+  for(let la=-60;la<=60;la+=30){const[,y]=proj(la,0);const l=mk("line",{class:"gline",x1:0,y1:y,x2:960,y2:y});g.appendChild(l);}
+  svg.appendChild(g);
+}
+function drawPins(svg){
+  CITIES.forEach(c=>{
+    const[cx,cy]=proj(c.lat,c.lon);
+    const g=mk("g",{class:"pin",transform:`translate(${cx.toFixed(1)},${cy.toFixed(1)})`});
+    g.appendChild(mk("circle",{class:"bg",r:9,cx:0,cy:0}));
+    g.appendChild(mk("circle",{class:"dot",r:5,cx:0,cy:0}));
+    const t=mk("text",{x:0,y:-11});t.textContent=c.name;g.appendChild(t);
+    g.addEventListener("click",e=>{e.stopPropagation();openPopup(c,cx,cy);});
+    pins[c.name]=g;svg.appendChild(g);
+  });
+}
+
+function openPopup(city,cx,cy){
+  const pop=document.getElementById("popup");
+  document.getElementById("pc").textContent=city.name;
+  document.getElementById("pl").textContent=city.loc;
+  document.getElementById("pb").innerHTML='<div class="loading">⏳ Cargando datos climáticos...</div>';
+  document.getElementById("pf").textContent="";
+  const ab=document.getElementById("ab");ab.className="abanner";ab.innerHTML="";
+  const wr=document.getElementById("wrap").getBoundingClientRect();
+  const sv=document.getElementById("map").getBoundingClientRect();
+  const sx=sv.width/960,sy=sv.height/500;
+  let px=sv.left-wr.left+cx*sx+14, py=sv.top-wr.top+cy*sy-70;
+  if(px+305>wr.width)px-=318;if(py<8)py=8;if(py+500>wr.height)py=Math.max(8,wr.height-508);
+  pop.style.left=px+"px";pop.style.top=py+"px";pop.style.display="block";
+  fetchWeather(city);
+}
+function closePopup(){document.getElementById("popup").style.display="none";}
+
+async function fetchWeather(city){
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=auto&forecast_days=7`;
+    const d=await(await fetch(url)).json();
+    const cur=d.current,day=d.daily;
+    const temp=Math.round(cur.temperature_2m);
+    const tmax=Math.round(day.temperature_2m_max[0]);
+    const tmin=Math.round(day.temperature_2m_min[0]);
+    const rain=(day.precipitation_sum[0]??0).toFixed(1);
+    const code=cur.weathercode;
+    const now=new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
+    // Alert banner
+    const msgs=alertMessages(city.name,temp,parseFloat(rain));
+    const ab=document.getElementById("ab");
+    if(msgs.length){
+      const lv=alertLevel(city.name,temp,parseFloat(rain));
+      ab.className=`abanner show ${lv}`;
+      ab.innerHTML=(lv==="crit"?"🔴 ":"⚠️ ")+"<div>"+msgs.join("<br>")+"</div>";
+    }
+    // Forecast
+    const today=new Date();
+    let fc='<div class="fct">📅 Pronóstico 7 días</div><div class="fcw">';
+    for(let i=0;i<7;i++){
+      const dt=new Date(today);dt.setDate(today.getDate()+i);
+      const dw=i===0?"Hoy":DOW[dt.getDay()];
+      fc+=`<div class="fcd${i===0?" today":""}">
+        <div class="dow">${dw}</div>
+        <div class="fi">${emoji(day.weathercode[i])}</div>
+        <div class="fh">${Math.round(day.temperature_2m_max[i])}°</div>
+        <div class="fl">${Math.round(day.temperature_2m_min[i])}°</div>
+        <div class="fr">${(day.precipitation_sum[i]??0).toFixed(1)}mm</div>
+      </div>`;
+    }
+    fc+='</div>';
+    document.getElementById("pb").innerHTML=`
+      <div class="row1">
+        <div class="ico">${emoji(code)}</div>
+        <div class="tr"><div class="tv">${temp}°C</div><div class="tc">${label(code)}</div></div>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="v hi">${tmax}°C</div><div class="l">🔺 Máxima</div></div>
+        <div class="card"><div class="v lo">${tmin}°C</div><div class="l">🔻 Mínima</div></div>
+        <div class="card"><div class="v rn">${rain} mm</div><div class="l">🌧️ Lluvia hoy</div></div>
+      </div>${fc}`;
+    document.getElementById("pf").textContent=`Actualizado · ${now} hora local · Open-Meteo`;
+  }catch(e){
+    document.getElementById("pb").innerHTML='<div class="err">No se pudo cargar el clima.<br>Verifica tu conexión a internet.</div>';
+  }
+}
+
+async function loadMap(){
+  const svg=document.getElementById("map");
+  svg.appendChild(mk("rect",{class:"ocean",width:960,height:500}));
+  drawGrid(svg);
+  try{
+    await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+    const world=await(await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")).json();
+    const countries=topojson.feature(world,world.objects.countries);
+    const g=mk("g",{});
+    const rp=ring=>ring.map(([lo,la],i)=>{const[x,y]=proj(la,lo);return(i?"L":"M")+x.toFixed(1)+","+y.toFixed(1);}).join("")+"Z";
+    countries.features.forEach(f=>{
+      const id=parseInt(f.id);
+      const path=mk("path",{class:OPS.has(id)?"land op":"land"});
+      let d="";
+      if(f.geometry.type==="Polygon")d=f.geometry.coordinates.map(rp).join(" ");
+      else if(f.geometry.type==="MultiPolygon")d=f.geometry.coordinates.map(p=>p.map(rp).join(" ")).join(" ");
+      if(d){path.setAttribute("d",d);g.appendChild(path);}
+    });
+    svg.appendChild(g);
+  }catch(e){console.warn(e);}
+  drawPins(svg);
+  loadPinColors();
+}
+loadMap();
+document.getElementById("map").addEventListener("click",closePopup);
+</script>
+</body>
+</html>
