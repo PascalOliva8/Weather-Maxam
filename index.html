@@ -25,7 +25,7 @@
   .pin.warn circle.bg{fill:rgba(255,170,0,.2)}
   .pin.crit circle.dot{fill:#ff3333;stroke:#fff}
   .pin.crit circle.bg{fill:rgba(255,50,50,.22)}
-  .pin:hover circle.dot{r:7}
+  .pin:hover circle.dot{r:6}
   .pin text{font-size:8px;fill:#90bcd8;pointer-events:none;text-anchor:middle}
   .pin.warn text{fill:#ffd980}
   .pin.crit text{fill:#ffaaaa}
@@ -91,32 +91,34 @@
 </div>
 <script>
 const CITIES=[
-  {name:"Elenita",         loc:"Antofagasta, Chile",        lat:-23.65,lon:-70.40},
-  {name:"Escondida",       loc:"Antofagasta, Chile",        lat:-24.27,lon:-69.07},
-  {name:"Cocachacra",      loc:"Lima, Perú",                lat:-17.05,lon:-71.75},
-  {name:"Las Bambas",      loc:"Challhuahuacho, Perú",      lat:-14.07,lon:-72.17},
-  {name:"Lumwana",         loc:"Lumwana, Zambia",           lat:-12.38,lon:25.83},
-  {name:"Lafigué",         loc:"Lafigué, Costa de Marfil",  lat:8.23,lon:-6.15},
-  {name:"Perseus",         loc:"Ayanfuri, Ghana",           lat:5.88,lon:-1.97},
-  {name:"Kiaka",           loc:"Niarba, Burkina Faso",      lat:11.50,lon:-3.20},
-  {name:"Houndé",          loc:"Houndé, Burkina Faso",      lat:11.49,lon:-3.01},
-  {name:"Sukari",          loc:"Marsa Alam, Egipto",        lat:24.88,lon:34.87},
-  {name:"Chesterfield",    loc:"Chesterfield, UK",          lat:53.24,lon:-1.42},
-  {name:"Ust-Kamenogorsk", loc:"Oskemen, Kazajistán",       lat:49.98,lon:82.61},
-  {name:"McLarty",         loc:"Yarloop, Australia",        lat:-32.95,lon:115.90},
-  {name:"Newman",          loc:"West Australia, Australia", lat:-23.36,lon:119.73},
+  {name:"Elenita",         loc:"Antofagasta, Chile",                  lat:-23.65,lon:-70.40},
+  {name:"Escondida",       loc:"Antofagasta, Chile",                  lat:-24.27,lon:-69.07},
+  {name:"Cocachacra",      loc:"Lima, Perú",                          lat:-17.05,lon:-71.75},
+  {name:"Lumwana",         loc:"Lumwana, Zambia",                     lat:-12.38,lon:25.83},
+  {name:"Lafigué",         loc:"Lafigué, Costa de Marfil",            lat:8.23,lon:-6.15},
+  {name:"Perseus",         loc:"Ayanfuri, Ghana",                     lat:5.88,lon:-1.97},
+  {name:"Houndé",          loc:"Houndé, Burkina Faso",                lat:11.49,lon:-3.01},
+  {name:"Sukari",          loc:"Marsa Alam, Egipto",                  lat:24.88,lon:34.87},
+  {name:"Chesterfield",    loc:"Chesterfield, UK",                    lat:53.24,lon:-1.42},
+  {name:"Páramo de Masa",  loc:"Quintanilla s/Sierra, Burgos, España",lat:42.82,lon:-3.52},
+  {name:"Ust-Kamenogorsk", loc:"Oskemen, Kazajistán",                 lat:49.98,lon:82.61},
+  {name:"McLarty",         loc:"Yarloop, Australia",                  lat:-32.95,lon:115.90},
+  {name:"Newman",          loc:"West Australia, Australia",           lat:-23.36,lon:119.73},
+  {name:"Bajool",          loc:"Queensland, Australia",               lat:-23.64,lon:150.58},
+  {name:"West Virginia",   loc:"Hernshaw, West Virginia, EE.UU.",     lat:38.07,lon:-81.70},
 ];
 // Historical normal ranges [tMin, tMax, rainAlertMm]
 const NORMS={
-  "Elenita":        [8,32,12],"Escondida":       [4,34,8],
-  "Cocachacra":     [10,32,20],"Las Bambas":     [-6,18,25],
-  "Lumwana":        [14,38,30],"Lafigué":        [20,40,35],
-  "Perseus":        [22,38,30],"Kiaka":          [19,42,30],
-  "Houndé":         [19,42,30],"Sukari":         [18,46,5],
-  "Chesterfield":   [-4,28,20],"Ust-Kamenogorsk":[-25,36,18],
-  "McLarty":        [5,43,20],"Newman":          [7,46,14],
+  "Elenita":          [8,32,12],  "Escondida":        [4,34,8],
+  "Cocachacra":       [10,32,20], "Lumwana":          [14,38,30],
+  "Lafigué":          [20,40,35], "Perseus":          [22,38,30],
+  "Houndé":           [19,42,30], "Sukari":           [18,46,5],
+  "Chesterfield":     [-4,28,20], "Páramo de Masa":   [-5,25,25],
+  "Ust-Kamenogorsk":  [-25,36,18],"McLarty":          [5,43,20],
+  "Newman":           [7,46,14],  "Bajool":           [10,42,20],
+  "West Virginia":    [-8,34,25],
 };
-const OPS=new Set([152,604,894,384,288,854,818,826,398,36]);
+const OPS=new Set([152,604,894,384,288,854,818,826,398,36,840,724]);
 const DOW=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const pins={};
 
@@ -164,9 +166,12 @@ function drawPins(svg){
   CITIES.forEach(c=>{
     const[cx,cy]=proj(c.lat,c.lon);
     const g=mk("g",{class:"pin",transform:`translate(${cx.toFixed(1)},${cy.toFixed(1)})`});
-    g.appendChild(mk("circle",{class:"bg",r:9,cx:0,cy:0}));
-    g.appendChild(mk("circle",{class:"dot",r:5,cx:0,cy:0}));
-    const t=mk("text",{x:0,y:-11});t.textContent=c.name;g.appendChild(t);
+    g.appendChild(mk("circle",{class:"bg",r:7,cx:0,cy:0}));
+    g.appendChild(mk("circle",{class:"dot",r:4,cx:0,cy:0}));
+    // Alternate label position to reduce overlap
+    const BELOW=["Escondida","Houndé","Newman","Bajool","McLarty"];
+    const yOff = BELOW.includes(c.name) ? 16 : -9;
+    const t=mk("text",{x:0,y:yOff});t.textContent=c.name;g.appendChild(t);
     g.addEventListener("click",e=>{e.stopPropagation();openPopup(c,cx,cy);});
     pins[c.name]=g;svg.appendChild(g);
   });
