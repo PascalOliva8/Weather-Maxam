@@ -106,6 +106,9 @@ const CITIES=[
   {name:"Newman",          loc:"West Australia, Australia",           lat:-23.36,lon:119.73},
   {name:"Bajool",          loc:"Queensland, Australia",               lat:-23.64,lon:150.58},
   {name:"West Virginia",   loc:"Hernshaw, West Virginia, EE.UU.",     lat:38.07,lon:-81.70},
+  {name:"Victoria",        loc:"Victoria, Rumanía",                   lat:43.73,lon:28.58},
+  {name:"Nowy Duninów",    loc:"Nowy Duninów, Polonia",               lat:52.47,lon:19.72},
+  {name:"Bisha",           loc:"Bisha, Eritrea",                      lat:14.85,lon:37.55},
 ];
 // Historical normal ranges [tMin, tMax, rainAlertMm]
 const NORMS={
@@ -117,8 +120,11 @@ const NORMS={
   "Ust-Kamenogorsk":  [-25,36,18],"McLarty":          [5,43,20],
   "Newman":           [7,46,14],  "Bajool":           [10,42,20],
   "West Virginia":    [-8,34,25],
+  "Victoria":         [-5,30,20],
+  "Nowy Duninów":     [-15,30,20],
+  "Bisha":            [15,42,15],
 };
-const OPS=new Set([152,604,894,384,288,854,818,826,398,36,840,724]);
+const OPS=new Set([152,604,894,384,288,854,818,826,398,36,840,724,642,616,232]);
 const DOW=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const pins={};
 
