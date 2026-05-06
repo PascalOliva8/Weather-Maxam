@@ -235,6 +235,7 @@ async function fetchWeather(city){
     }
     fc+='</div>';
     document.getElementById("pb").innerHTML=`
+      <div id="local-time-block"></div>
       <div class="row1">
         <div class="ico">${emoji(code)}</div>
         <div class="tr"><div class="tv">${temp}°C</div><div class="tc">${label(code)}</div></div>
@@ -244,7 +245,19 @@ async function fetchWeather(city){
         <div class="card"><div class="v lo">${tmin}°C</div><div class="l">🔻 Mínima</div></div>
         <div class="card"><div class="v rn">${rain} mm</div><div class="l">🌧️ Lluvia hoy</div></div>
       </div>${fc}`;
+    // Local time from timezone returned by API
+    const tz = d.timezone;
+    const localTime = new Date().toLocaleTimeString("es-ES", {hour:"2-digit", minute:"2-digit", second:"2-digit", timeZone: tz});
+    const localDate = new Date().toLocaleDateString("es-ES", {weekday:"long", day:"numeric", month:"short", timeZone: tz});
     document.getElementById("pf").textContent=`Actualizado · ${now} hora local · Open-Meteo`;
+    document.getElementById("local-time-block").innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.042);border-radius:8px;padding:9px 13px;margin-bottom:10px">
+        <div style="font-size:11px;color:#556680">🕐 Hora local en ${city.name}</div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:#00c8ff;letter-spacing:1px">${localTime}</div>
+          <div style="font-size:10px;color:#556680;margin-top:2px;text-transform:capitalize">${localDate}</div>
+        </div>
+      </div>`;
   }catch(e){
     document.getElementById("pb").innerHTML='<div class="err">No se pudo cargar el clima.<br>Verifica tu conexión a internet.</div>';
   }
