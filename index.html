@@ -174,10 +174,8 @@ function drawPins(svg){
     const g=mk("g",{class:"pin",transform:`translate(${cx.toFixed(1)},${cy.toFixed(1)})`});
     g.appendChild(mk("circle",{class:"bg",r:7,cx:0,cy:0}));
     g.appendChild(mk("circle",{class:"dot",r:4,cx:0,cy:0}));
-    // Alternate label position to reduce overlap
-    const BELOW=["Escondida","Houndé","Newman","Bajool","McLarty"];
-    const yOff = BELOW.includes(c.name) ? 16 : -9;
-    const t=mk("text",{x:0,y:yOff});t.textContent=c.name;g.appendChild(t);
+    const t=mk("text",{x:0,y:-9,"data-cx":cx.toFixed(1),"data-cy":cy.toFixed(1)});
+    t.textContent=c.name;g.appendChild(t);
     g.addEventListener("click",e=>{e.stopPropagation();openPopup(c,cx,cy);});
     pins[c.name]=g;svg.appendChild(g);
   });
@@ -263,6 +261,67 @@ async function fetchWeather(city){
   }
 }
 
+function fixLabelOverlap(){
+  const PIN_R = 6;      // pin radius + small gap
+  const ABOVE = -11;    // default: label above pin
+  const BELOW = 18;     // alternative: label below pin
+  const W = 50, H = 11; // approx label bounding box
+
+  const labels = [];
+  document.querySelectorAll("#map .pin text").forEach(el => {
+    const g = el.parentNode;
+    const tf = g.getAttribute("transform");
+    const m = tf.match(/translate\(([^,]+),([^)]+)\)/);
+    if(!m) return;
+    const cx = parseFloat(m[1]), cy = parseFloat(m[2]);
+    labels.push({el, cx, cy, offX:0, offY:ABOVE, flipped:false});
+  });
+
+  // Pass 1: flip labels that overlap with a nearby pin circle
+  for(let i=0; i<labels.length; i++){
+    for(let j=0; j<labels.length; j++){
+      if(i===j) continue;
+      const a=labels[i], b=labels[j];
+      // Check if label of 'a' overlaps the pin circle of 'b'
+      const lx = a.cx + a.offX;
+      const ly = a.cy + a.offY;
+      const dx = Math.abs(lx - b.cx);
+      const dy = Math.abs(ly - b.cy);
+      if(dx < W/2 && dy < PIN_R + H){
+        a.offY = BELOW;
+        a.flipped = true;
+      }
+    }
+  }
+
+  // Pass 2: push labels that still overlap each other
+  for(let iter=0; iter<8; iter++){
+    for(let i=0; i<labels.length; i++){
+      for(let j=i+1; j<labels.length; j++){
+        const a=labels[i], b=labels[j];
+        const ax=a.cx+a.offX, ay=a.cy+a.offY;
+        const bx=b.cx+b.offX, by=b.cy+b.offY;
+        const dx=Math.abs(ax-bx), dy=Math.abs(ay-by);
+        if(dx<W && dy<H){
+          // prefer flipping to below rather than nudging if not already flipped
+          if(!a.flipped && a.offY===ABOVE){ a.offY=BELOW; a.flipped=true; continue; }
+          if(!b.flipped && b.offY===ABOVE){ b.offY=BELOW; b.flipped=true; continue; }
+          // otherwise nudge horizontally
+          const hpush = (W-dx)/2 + 1;
+          if(ax<=bx){ a.offX-=hpush/2; b.offX+=hpush/2; }
+          else       { a.offX+=hpush/2; b.offX-=hpush/2; }
+        }
+      }
+    }
+  }
+
+  // Apply
+  labels.forEach(({el, offX, offY}) => {
+    el.setAttribute("x", offX.toFixed(1));
+    el.setAttribute("y", offY.toFixed(1));
+  });
+}
+
 async function loadMap(){
   const svg=document.getElementById("map");
   svg.appendChild(mk("rect",{class:"ocean",width:960,height:500}));
@@ -284,6 +343,7 @@ async function loadMap(){
     svg.appendChild(g);
   }catch(e){console.warn(e);}
   drawPins(svg);
+  fixLabelOverlap();
   loadPinColors();
 }
 loadMap();
