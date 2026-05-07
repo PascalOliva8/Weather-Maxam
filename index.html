@@ -286,74 +286,73 @@ async function fetchNews(city){
   const newsEl = document.getElementById("news-content");
   newsEl.innerHTML = '<div class="news-loading">⏳ Buscando noticias de ' + country + '...</div>';
 
-  const SUBREDDIT = {
-    "Chile":"chile","Perú":"peru","España":"spain",
-    "Costa de Marfil":"worldnews","Burkina Faso":"worldnews",
-    "Rumanía":"romania","Polonia":"poland","Kazajistán":"worldnews",
-    "Australia":"australia","Reino Unido":"unitedkingdom",
-    "Estados Unidos":"worldnews","Zambia":"worldnews",
-    "Ghana":"ghana","Egipto":"egypt","Eritrea":"worldnews",
+  // Real newspaper RSS feeds per country
+  const RSS_FEEDS = {
+    "Chile":          {name:"El Mercurio",      rss:"https://www.emol.com/rss/"},
+    "Perú":           {name:"El Comercio",       rss:"https://elcomercio.pe/arc/outboundfeeds/rss/"},
+    "España":         {name:"El País",           rss:"https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada"},
+    "Costa de Marfil":{name:"Fraternité Matin",  rss:"https://www.fratmat.info/feed"},
+    "Burkina Faso":   {name:"Le Faso",           rss:"https://lefaso.net/spip.php?page=backend"},
+    "Rumanía":        {name:"Digi24",            rss:"https://www.digi24.ro/rss"},
+    "Polonia":        {name:"TVN24",             rss:"https://tvn24.pl/najnowsze.xml"},
+    "Kazajistán":     {name:"The Astana Times",  rss:"https://astanatimes.com/feed/"},
+    "Australia":      {name:"ABC News AU",       rss:"https://www.abc.net.au/news/feed/51120/rss.xml"},
+    "Reino Unido":    {name:"BBC News",          rss:"https://feeds.bbci.co.uk/news/rss.xml"},
+    "Estados Unidos": {name:"AP News",           rss:"https://rsshub.app/apnews/topics/ap-top-news"},
+    "Zambia":         {name:"Zambia Daily Mail",  rss:"https://www.daily-mail.co.zm/feed/"},
+    "Ghana":          {name:"GhanaWeb",          rss:"https://www.ghanaweb.com/GhanaHomePage/RSS/ghanaweb.xml"},
+    "Egipto":         {name:"Egypt Independent", rss:"https://egyptindependent.com/feed/"},
+    "Eritrea":        {name:"Shabait",           rss:"https://www.shabait.com/feed/"},
   };
-  const sub = SUBREDDIT[country] || "worldnews";
+
+  const feed = RSS_FEEDS[country];
+  if(!feed){ newsEl.innerHTML='<div class="news-error">Sin fuente configurada para '+country+'.</div>'; return; }
+
+  // Use rss2json.com free tier (1000 req/day, no key needed for basic)
+  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.rss)}&count=3`;
 
   try {
-    // Reddit JSON API - free, no key, CORS enabled
-    // Use worldnews with country search for countries without own subreddit
-    let url;
-    if(sub === "worldnews"){
-      url = `https://www.reddit.com/r/worldnews/search.json?q=${encodeURIComponent(country)}&sort=new&limit=3&restrict_sr=1&t=week`;
-    } else {
-      url = `https://www.reddit.com/r/${sub}/top.json?limit=3&t=day`;
-    }
-
-    const res = await fetch(url, {headers:{"Accept":"application/json"}});
-    if(!res.ok) throw new Error("Reddit fetch failed");
+    const res = await fetch(apiUrl);
+    if(!res.ok) throw new Error("rss2json failed");
     const data = await res.json();
-    const posts = data?.data?.children;
 
-    if(!posts || posts.length === 0) throw new Error("No posts");
+    if(data.status !== "ok" || !data.items || data.items.length === 0) throw new Error("no items");
 
-    const items = posts
-      .filter(p => !p.data.stickied)
-      .slice(0,3)
-      .map(p => {
-        const d = p.data;
-        const title = d.title || "";
-        const source = d.domain || "Reddit";
-        const url = d.url || `https://reddit.com${d.permalink}`;
-        const redditUrl = `https://reddit.com${d.permalink}`;
-        const age = timeAgo(d.created_utc);
-        const score = d.score > 0 ? `⬆️ ${d.score}` : "";
-        return `
-          <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
-            <div style="font-size:11.5px;color:#ccddf0;line-height:1.5;margin-bottom:5px">${title}</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-              <div style="display:flex;gap:8px;align-items:center">
-                <a href="${url}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 ${source}</a>
-                <a href="${redditUrl}" target="_blank" style="font-size:9.5px;color:#ff6644;text-decoration:none">💬 r/${sub}</a>
-              </div>
-              <div style="display:flex;gap:6px;font-size:9px;color:#3a5060">
-                <span>${score}</span>
-                <span>${age}</span>
-              </div>
-            </div>
-          </div>`;
-      }).join("");
+    const items = data.items.slice(0,3).map(item => {
+      const title = item.title?.replace(/<[^>]+>/g,"").trim() || "";
+      const date = item.pubDate ? new Date(item.pubDate).toLocaleDateString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
+      const link = item.link || "#";
+      return `
+        <div style="margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.06)">
+          <div style="font-size:11.5px;color:#ccddf0;line-height:1.5;margin-bottom:4px">${title}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <a href="${link}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 ${feed.name}</a>
+            <span style="font-size:9px;color:#3a5060">${date}</span>
+          </div>
+        </div>`;
+    }).join("");
 
-    newsEl.innerHTML = items || '<div class="news-error">No se encontraron noticias recientes.</div>';
+    newsEl.innerHTML = items;
 
   } catch(e) {
-    newsEl.innerHTML = `<div class="news-error">No se pudieron cargar noticias de ${country}.<br>
-      <a href="https://www.google.com/search?q=noticias+${encodeURIComponent(country)}&tbm=nws" 
-         target="_blank" style="color:#00c8ff;font-size:10px">🔗 Ver en Google News</a></div>`;
+    // Fallback: direct link to newspaper
+    newsEl.innerHTML = `
+      <div style="text-align:center;padding:10px">
+        <div style="font-size:11px;color:#7799bb;margin-bottom:10px">No se pudo cargar el feed de ${feed.name}.</div>
+        <a href="${feed.rss.replace('/feed','').replace('/rss','').replace('.xml','').split('/').slice(0,3).join('/')}" 
+           target="_blank" 
+           style="font-size:11px;color:#00c8ff;text-decoration:none;background:rgba(0,200,255,.1);padding:7px 14px;border-radius:8px;display:inline-block">
+          🌐 Abrir ${feed.name}
+        </a>
+      </div>`;
   }
 }
 
 function timeAgo(utc){
-  const diff = Math.floor(Date.now()/1000) - utc;
-  if(diff < 3600) return Math.floor(diff/60) + "m";
-  if(diff < 86400) return Math.floor(diff/3600) + "h";
-  return Math.floor(diff/86400) + "d";
+  const diff=Math.floor(Date.now()/1000)-utc;
+  if(diff<3600)return Math.floor(diff/60)+"m";
+  if(diff<86400)return Math.floor(diff/3600)+"h";
+  return Math.floor(diff/86400)+"d";
 }
 
 
