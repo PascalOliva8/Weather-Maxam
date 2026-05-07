@@ -30,7 +30,7 @@
   .pin.warn text{fill:#ffd980}
   .pin.crit text{fill:#ffaaaa}
 
-  #popup{position:absolute;display:none;z-index:200;background:#07101f;border:1px solid #1a3360;border-radius:14px;width:320px;box-shadow:0 10px 55px rgba(0,60,220,.5);overflow:hidden}
+  #popup{position:absolute;display:none;z-index:200;background:#07101f;border:1px solid #1a3360;border-radius:14px;width:320px;box-shadow:0 10px 55px rgba(0,60,220,.5);overflow:hidden;flex-direction:column;max-height:88vh}
   .ph{background:linear-gradient(135deg,#0d1e50,#08122e);padding:12px 15px 10px;display:flex;justify-content:space-between;align-items:flex-start}
   .ph .cn{font-size:14px;font-weight:700}
   .ph .cl{font-size:10px;color:#6688bb;margin-top:2px}
@@ -91,11 +91,13 @@
     <button onclick="closePopup()">✕</button>
   </div>
   <div class="abanner" id="ab"></div>
+  <div id="popup-scroll" style="overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:#1a3a6a #070e1c">
   <div class="pb" id="pb"><div class="loading">⏳ Cargando...</div></div>
   <div class="pf" id="pf"></div>
   <div class="news-section" id="news-section" style="padding:0 15px 12px">
     <div class="news-title">📰 Noticia del día</div>
     <div class="news-content" id="news-content"><div class="news-loading">⏳ Buscando noticias...</div></div>
+  </div>
   </div>
 </div>
 <script>
@@ -202,7 +204,7 @@ function openPopup(city,cx,cy){
   const sx=sv.width/960,sy=sv.height/500;
   let px=sv.left-wr.left+cx*sx+14, py=sv.top-wr.top+cy*sy-70;
   if(px+305>wr.width)px-=318;if(py<8)py=8;if(py+500>wr.height)py=Math.max(8,wr.height-508);
-  pop.style.left=px+"px";pop.style.top=py+"px";pop.style.display="block";
+  pop.style.left=px+"px";pop.style.top=py+"px";pop.style.display="flex";
   fetchWeather(city);
   fetchNews(city);
 }
