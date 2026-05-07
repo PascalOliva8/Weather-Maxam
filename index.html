@@ -221,246 +221,88 @@ const COUNTRY_MAP={
 async function fetchNews(city){
   const country = COUNTRY_MAP[city.name] || city.loc.split(",").pop().trim();
   const newsEl = document.getElementById("news-content");
-  newsEl.innerHTML = '<div class="news-loading">⏳ Buscando noticias de ' + country + '...</div>';
+  newsEl.innerHTML = '<div class="news-loading">⏳ Buscando titulares de ' + country + '...</div>';
 
-  // Map countries to Guardian search terms and language
-  const SEARCH_MAP = {
-    "Chile":"Chile","Perú":"Peru","España":"Spain","Costa de Marfil":"Ivory Coast",
+  // Wikipedia search terms per country
+  const WIKI_MAP = {
+    "Chile":"Chile","Perú":"Peru","España":"Spain","Costa de Marfil":"Ivory Coast Côte d'Ivoire",
     "Burkina Faso":"Burkina Faso","Rumanía":"Romania","Polonia":"Poland",
     "Kazajistán":"Kazakhstan","Australia":"Australia","Reino Unido":"United Kingdom",
-    "Estados Unidos":"United States","Zambia":"Zambia","Ghana":"Ghana",
+    "Estados Unidos":"West Virginia United States","Zambia":"Zambia","Ghana":"Ghana",
     "Egipto":"Egypt","Eritrea":"Eritrea",
   };
-  const searchTerm = SEARCH_MAP[country] || country;
+  const searchTerm = WIKI_MAP[country] || country;
 
-  // Try sources in order until one works
-  const sources = [
-    () => fetchFromGuardian(searchTerm, country, newsEl),
-    () => fetchFromWikipediaNews(searchTerm, country, newsEl),
-    () => fetchFromReliefWeb(searchTerm, country, newsEl),
-  ];
+  // Wikipedia language per country
+  const WIKI_LANG = {
+    "España":"es","Chile":"es","Perú":"es","Rumanía":"ro","Polonia":"pl",
+  };
+  const lang = WIKI_LANG[country] || "en";
 
-  for(const source of sources){
-    const ok = await source();
-    if(ok) return;
-  }
-  newsEl.innerHTML = '<div class="news-error">No se encontraron noticias en este momento.</div>';
-}
-
-async function fetchFromGuardian(searchTerm, country, newsEl){
-  try{
-    // The Guardian open platform - "test" key works from browsers
-    const url = `https://content.guardianapis.com/search?q=${encodeURIComponent(searchTerm)}&order-by=newest&show-fields=trailText,headline&page-size=1&api-key=test`;
-    const res = await fetch(url);
-    if(!res.ok) return false;
-    const data = await res.json();
-    const results = data?.response?.results;
-    if(!results || results.length === 0) return false;
-    const item = results[0];
-    const headline = item.fields?.headline || item.webTitle || "";
-    const trail = item.fields?.trailText || "";
-    const date = item.webPublicationDate ? new Date(item.webPublicationDate).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : "";
-    const link = item.webUrl || "#";
-    // Strip HTML tags from trailText
-    const cleanTrail = trail.replace(/<[^>]+>/g,"");
-    newsEl.innerHTML = `
-      <div style="font-size:12px;font-weight:600;color:#ccddf0;line-height:1.5;margin-bottom:6px">${headline}</div>
-      ${cleanTrail ? `<div style="font-size:11px;color:#8899bb;line-height:1.5;margin-bottom:8px">${cleanTrail}</div>` : ""}
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <a href="${link}" target="_blank" style="font-size:10px;color:#00c8ff;text-decoration:none">🔗 The Guardian</a>
-        <span style="font-size:9.5px;color:#3a5060">${date}</span>
-      </div>`;
-    return true;
-  }catch(e){ return false; }
-}
-
-async function fetchFromWikipediaNews(searchTerm, country, newsEl){
-  try{
-    // Wikipedia "in the news" via DuckDuckGo instant answer (no key, CORS ok)
-    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(searchTerm+" news")}&format=json&no_html=1&skip_disambig=1`;
-    const res = await fetch(url);
-    if(!res.ok) return false;
-    const data = await res.json();
-    const abstract = data?.AbstractText || data?.Answer || "";
-    if(!abstract || abstract.length < 30) return false;
-    const source = data?.AbstractSource || "DuckDuckGo";
-    const sourceUrl = data?.AbstractURL || "#";
-    newsEl.innerHTML = `
-      <div style="font-size:12px;color:#ccddf0;line-height:1.6;margin-bottom:8px">${abstract.slice(0,280)}${abstract.length>280?"…":""}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <a href="${sourceUrl}" target="_blank" style="font-size:10px;color:#00c8ff;text-decoration:none">🔗 ${source}</a>
-      </div>`;
-    return true;
-  }catch(e){ return false; }
-}
-
-async function fetchFromReliefWeb(searchTerm, country, newsEl){
-  try{
-    // ReliefWeb API - humanitarian news, no key needed, CORS enabled
-    const url = `https://api.reliefweb.int/v1/reports?appname=climamaxam&filter[field]=country.name&filter[value]=${encodeURIComponent(searchTerm)}&sort[]=date:desc&limit=1&fields[include][]=title&fields[include][]=body-html&fields[include][]=source&fields[include][]=date&fields[include][]=url`;
-    const res = await fetch(url);
-    if(!res.ok) return false;
-    const data = await res.json();
-    const items = data?.data;
-    if(!items || items.length === 0) return false;
-    const item = items[0].fields;
-    const title = item.title || "";
-    const body = (item["body-html"]||"").replace(/<[^>]+>/g,"").slice(0,250);
-    const source = item.source?.[0]?.name || "ReliefWeb";
-    const date = item.date?.created ? new Date(item.date.created).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : "";
-    const link = item.url || "#";
-    newsEl.innerHTML = `
-      <div style="font-size:12px;font-weight:600;color:#ccddf0;line-height:1.5;margin-bottom:6px">${title}</div>
-      ${body ? `<div style="font-size:11px;color:#8899bb;line-height:1.5;margin-bottom:8px">${body}…</div>` : ""}
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <a href="${link}" target="_blank" style="font-size:10px;color:#00c8ff;text-decoration:none">🔗 ${source}</a>
-        <span style="font-size:9.5px;color:#3a5060">${date}</span>
-      </div>`;
-    return true;
-  }catch(e){ return false; }
-}
-
-async function fetchNewsFallback(city, country, newsEl){
   try {
-    // Fallback: use Wikipedia current events summary via REST API
-    const lang = {"España":"es","Chile":"es","Perú":"es","Francia":"fr","Polonia":"pl","Rumanía":"ro"}[country] || "en";
-    const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/Portal:Current_events`);
+    // Wikipedia search API - supports CORS from browsers with origin=*
+    const year = new Date().getFullYear();
+    const month = new Date().toLocaleString("en",{month:"long"});
+    const query = `${searchTerm} ${month} ${year}`;
+    const url = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=5&srprop=snippet|titlesnippet`;
+
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("Wikipedia fetch failed");
     const data = await res.json();
-    if(data && data.extract){
-      const snippet = data.extract.split(".").slice(0,2).join(".") + ".";
-      newsEl.innerHTML = `
-        <div style="font-size:12px;color:#ccddf0;line-height:1.6;margin-bottom:8px">${snippet}</div>
-        <div style="font-size:10px;color:#3a5060;margin-top:6px">📌 Wikipedia Current Events</div>`;
-    } else {
-      newsEl.innerHTML = '<div class="news-error">No se encontraron noticias en este momento.</div>';
+    const results = data?.query?.search;
+
+    if(!results || results.length === 0){
+      // Fallback: search just country name
+      await fetchWikiBasic(lang, searchTerm, country, newsEl);
+      return;
     }
-  } catch(e2){
-    newsEl.innerHTML = '<div class="news-error">No se pudieron cargar las noticias.</div>';
+
+    // Filter out disambiguation pages, show up to 3 results
+    const filtered = results
+      .filter(r => !r.title.includes("disambiguation") && !r.title.includes("desambiguación"))
+      .slice(0, 3);
+
+    if(filtered.length === 0){
+      await fetchWikiBasic(lang, searchTerm, country, newsEl);
+      return;
+    }
+
+    const items = filtered.map(r => {
+      const title = r.title;
+      const snippet = r.snippet.replace(/<[^>]+>/g,"").replace(/&quot;/g,'"').replace(/&#039;/g,"'").replace(/&amp;/g,"&");
+      const wikiUrl = `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g,"_"))}`;
+      return `
+        <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
+          <div style="font-size:11.5px;font-weight:600;color:#ccddf0;margin-bottom:3px">${title}</div>
+          <div style="font-size:10.5px;color:#7799bb;line-height:1.5;margin-bottom:4px">${snippet}…</div>
+          <a href="${wikiUrl}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 Wikipedia</a>
+        </div>`;
+    }).join("");
+
+    newsEl.innerHTML = items;
+
+  } catch(e) {
+    await fetchWikiBasic(lang, searchTerm, country, newsEl);
   }
 }
 
-async function fetchWeather(city){
-  try{
-    const url=`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=auto&forecast_days=7`;
-    const d=await(await fetch(url)).json();
-    const cur=d.current,day=d.daily;
-    const temp=Math.round(cur.temperature_2m);
-    const tmax=Math.round(day.temperature_2m_max[0]);
-    const tmin=Math.round(day.temperature_2m_min[0]);
-    const rain=(day.precipitation_sum[0]??0).toFixed(1);
-    const code=cur.weathercode;
-    const now=new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
-    // Alert banner
-    const msgs=alertMessages(city.name,temp,parseFloat(rain));
-    const ab=document.getElementById("ab");
-    if(msgs.length){
-      const lv=alertLevel(city.name,temp,parseFloat(rain));
-      ab.className=`abanner show ${lv}`;
-      ab.innerHTML=(lv==="crit"?"🔴 ":"⚠️ ")+"<div>"+msgs.join("<br>")+"</div>";
-    }
-    // Forecast
-    const today=new Date();
-    let fc='<div class="fct">📅 Pronóstico 7 días</div><div class="fcw">';
-    for(let i=0;i<7;i++){
-      const dt=new Date(today);dt.setDate(today.getDate()+i);
-      const dw=i===0?"Hoy":DOW[dt.getDay()];
-      fc+=`<div class="fcd${i===0?" today":""}">
-        <div class="dow">${dw}</div>
-        <div class="fi">${emoji(day.weathercode[i])}</div>
-        <div class="fh">${Math.round(day.temperature_2m_max[i])}°</div>
-        <div class="fl">${Math.round(day.temperature_2m_min[i])}°</div>
-        <div class="fr">${(day.precipitation_sum[i]??0).toFixed(1)}mm</div>
-      </div>`;
-    }
-    fc+='</div>';
-    document.getElementById("pb").innerHTML=`
-      <div id="local-time-block"></div>
-      <div class="row1">
-        <div class="ico">${emoji(code)}</div>
-        <div class="tr"><div class="tv">${temp}°C</div><div class="tc">${label(code)}</div></div>
-      </div>
-      <div class="cards">
-        <div class="card"><div class="v hi">${tmax}°C</div><div class="l">🔺 Máxima</div></div>
-        <div class="card"><div class="v lo">${tmin}°C</div><div class="l">🔻 Mínima</div></div>
-        <div class="card"><div class="v rn">${rain} mm</div><div class="l">🌧️ Lluvia hoy</div></div>
-      </div>${fc}`;
-    // Local time from timezone returned by API
-    const tz = d.timezone;
-    const localTime = new Date().toLocaleTimeString("es-ES", {hour:"2-digit", minute:"2-digit", second:"2-digit", timeZone: tz});
-    const localDate = new Date().toLocaleDateString("es-ES", {weekday:"long", day:"numeric", month:"short", timeZone: tz});
-    document.getElementById("pf").textContent=`Actualizado · ${now} hora local · Open-Meteo`;
-    document.getElementById("local-time-block").innerHTML=`
-      <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.042);border-radius:8px;padding:9px 13px;margin-bottom:10px">
-        <div style="font-size:11px;color:#556680">🕐 Hora local en ${city.name}</div>
-        <div style="text-align:right">
-          <div style="font-size:20px;font-weight:800;color:#00c8ff;letter-spacing:1px">${localTime}</div>
-          <div style="font-size:10px;color:#556680;margin-top:2px;text-transform:capitalize">${localDate}</div>
-        </div>
-      </div>`;
-  }catch(e){
-    document.getElementById("pb").innerHTML='<div class="err">No se pudo cargar el clima.<br>Verifica tu conexión a internet.</div>';
+async function fetchWikiBasic(lang, searchTerm, country, newsEl){
+  try {
+    // Fallback: just get the Wikipedia page summary for the country
+    const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(searchTerm.split(" ")[0])}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("failed");
+    const data = await res.json();
+    const extract = data?.extract || "";
+    if(!extract) throw new Error("no extract");
+    const snippet = extract.slice(0, 300);
+    const wikiUrl = data?.content_urls?.desktop?.page || "#";
+    newsEl.innerHTML = `
+      <div style="font-size:11px;color:#7799bb;line-height:1.5;margin-bottom:8px">${snippet}…</div>
+      <a href="${wikiUrl}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 Wikipedia · ${country}</a>`;
+  } catch(e2) {
+    newsEl.innerHTML = '<div class="news-error">No se encontraron noticias en este momento.</div>';
   }
-}
-
-function fixLabelOverlap(){
-  const PIN_R = 6;      // pin radius + small gap
-  const ABOVE = -11;    // default: label above pin
-  const BELOW = 18;     // alternative: label below pin
-  const W = 50, H = 11; // approx label bounding box
-
-  const labels = [];
-  document.querySelectorAll("#map .pin text").forEach(el => {
-    const g = el.parentNode;
-    const tf = g.getAttribute("transform");
-    const m = tf.match(/translate\(([^,]+),([^)]+)\)/);
-    if(!m) return;
-    const cx = parseFloat(m[1]), cy = parseFloat(m[2]);
-    labels.push({el, cx, cy, offX:0, offY:ABOVE, flipped:false});
-  });
-
-  // Pass 1: flip labels that overlap with a nearby pin circle
-  for(let i=0; i<labels.length; i++){
-    for(let j=0; j<labels.length; j++){
-      if(i===j) continue;
-      const a=labels[i], b=labels[j];
-      // Check if label of 'a' overlaps the pin circle of 'b'
-      const lx = a.cx + a.offX;
-      const ly = a.cy + a.offY;
-      const dx = Math.abs(lx - b.cx);
-      const dy = Math.abs(ly - b.cy);
-      if(dx < W/2 && dy < PIN_R + H){
-        a.offY = BELOW;
-        a.flipped = true;
-      }
-    }
-  }
-
-  // Pass 2: push labels that still overlap each other
-  for(let iter=0; iter<8; iter++){
-    for(let i=0; i<labels.length; i++){
-      for(let j=i+1; j<labels.length; j++){
-        const a=labels[i], b=labels[j];
-        const ax=a.cx+a.offX, ay=a.cy+a.offY;
-        const bx=b.cx+b.offX, by=b.cy+b.offY;
-        const dx=Math.abs(ax-bx), dy=Math.abs(ay-by);
-        if(dx<W && dy<H){
-          // prefer flipping to below rather than nudging if not already flipped
-          if(!a.flipped && a.offY===ABOVE){ a.offY=BELOW; a.flipped=true; continue; }
-          if(!b.flipped && b.offY===ABOVE){ b.offY=BELOW; b.flipped=true; continue; }
-          // otherwise nudge horizontally
-          const hpush = (W-dx)/2 + 1;
-          if(ax<=bx){ a.offX-=hpush/2; b.offX+=hpush/2; }
-          else       { a.offX+=hpush/2; b.offX-=hpush/2; }
-        }
-      }
-    }
-  }
-
-  // Apply
-  labels.forEach(({el, offX, offY}) => {
-    el.setAttribute("x", offX.toFixed(1));
-    el.setAttribute("y", offY.toFixed(1));
-  });
 }
 
 async function loadMap(){
