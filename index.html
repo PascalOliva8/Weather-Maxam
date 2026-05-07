@@ -30,7 +30,7 @@
   .pin.warn text{fill:#ffd980}
   .pin.crit text{fill:#ffaaaa}
 
-  #popup{position:absolute;display:none;z-index:200;background:#07101f;border:1px solid #1a3360;border-radius:14px;width:320px;box-shadow:0 10px 55px rgba(0,60,220,.5);overflow:hidden;flex-direction:column;max-height:88vh}
+  #popup{position:absolute;display:none;z-index:200;background:#07101f;border:1px solid #1a3360;border-radius:14px;width:320px;box-shadow:0 10px 55px rgba(0,60,220,.5);flex-direction:column;max-height:85vh;overflow:hidden}
   .ph{background:linear-gradient(135deg,#0d1e50,#08122e);padding:12px 15px 10px;display:flex;justify-content:space-between;align-items:flex-start}
   .ph .cn{font-size:14px;font-weight:700}
   .ph .cl{font-size:10px;color:#6688bb;margin-top:2px}
@@ -91,7 +91,7 @@
     <button onclick="closePopup()">✕</button>
   </div>
   <div class="abanner" id="ab"></div>
-  <div id="popup-scroll" style="overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:#1a3a6a #070e1c">
+  <div id="popup-scroll" style="overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;scrollbar-width:thin;scrollbar-color:#2a4a7a #07101f">
   <div class="pb" id="pb"><div class="loading">⏳ Cargando...</div></div>
   <div class="pf" id="pf"></div>
   <div class="news-section" id="news-section" style="padding:0 15px 12px">
