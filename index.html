@@ -286,42 +286,74 @@ async function fetchNews(city){
   const newsEl = document.getElementById("news-content");
   newsEl.innerHTML = '<div class="news-loading">⏳ Buscando noticias de ' + country + '...</div>';
 
-  // Real newspaper RSS feeds per country
   const RSS_FEEDS = {
-    "Chile":          {name:"El Mercurio",      rss:"https://www.emol.com/rss/"},
+    "Chile":          {name:"Emol",             rss:"https://www.emol.com/rss/"},
     "Perú":           {name:"El Comercio",       rss:"https://elcomercio.pe/arc/outboundfeeds/rss/"},
     "España":         {name:"El País",           rss:"https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada"},
     "Costa de Marfil":{name:"Fraternité Matin",  rss:"https://www.fratmat.info/feed"},
     "Burkina Faso":   {name:"Le Faso",           rss:"https://lefaso.net/spip.php?page=backend"},
     "Rumanía":        {name:"Digi24",            rss:"https://www.digi24.ro/rss"},
     "Polonia":        {name:"TVN24",             rss:"https://tvn24.pl/najnowsze.xml"},
-    "Kazajistán":     {name:"The Astana Times",  rss:"https://astanatimes.com/feed/"},
+    "Kazajistán":     {name:"Astana Times",      rss:"https://astanatimes.com/feed/"},
     "Australia":      {name:"ABC News AU",       rss:"https://www.abc.net.au/news/feed/51120/rss.xml"},
     "Reino Unido":    {name:"BBC News",          rss:"https://feeds.bbci.co.uk/news/rss.xml"},
-    "Estados Unidos": {name:"AP News",           rss:"https://rsshub.app/apnews/topics/ap-top-news"},
+    "Estados Unidos": {name:"AP News",           rss:"https://feeds.apnews.com/rss/apf-topnews"},
     "Zambia":         {name:"Zambia Daily Mail",  rss:"https://www.daily-mail.co.zm/feed/"},
     "Ghana":          {name:"GhanaWeb",          rss:"https://www.ghanaweb.com/GhanaHomePage/RSS/ghanaweb.xml"},
     "Egipto":         {name:"Egypt Independent", rss:"https://egyptindependent.com/feed/"},
-    "Eritrea":        {name:"Shabait",           rss:"https://www.shabait.com/feed/"},
+    "Eritrea":        {name:"Shabait",           rss:"https://shabait.com/feed/"},
   };
 
   const feed = RSS_FEEDS[country];
-  if(!feed){ newsEl.innerHTML='<div class="news-error">Sin fuente configurada para '+country+'.</div>'; return; }
+  if(!feed){ newsEl.innerHTML='<div class="news-error">Sin fuente configurada.</div>'; return; }
 
-  // Use rss2json.com free tier (1000 req/day, no key needed for basic)
-  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.rss)}&count=3`;
+  // Try 3 different CORS proxies in sequence
+  const PROXIES = [
+    url => `https://allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  ];
 
+  let xml = null;
+  for(const proxy of PROXIES){
+    try{
+      const res = await fetch(proxy(feed.rss));
+      if(!res.ok) continue;
+      const text = await res.text();
+      if(text.includes("<item") || text.includes("<entry")){
+        xml = text;
+        break;
+      }
+    }catch(e){ continue; }
+  }
+
+  if(!xml){
+    newsEl.innerHTML = `
+      <div style="text-align:center;padding:10px">
+        <div style="font-size:11px;color:#7799bb;margin-bottom:10px">No se pudo cargar ${feed.name}.</div>
+        <a href="${feed.rss.split('/').slice(0,3).join('/')}" target="_blank"
+           style="font-size:11px;color:#00c8ff;text-decoration:none;background:rgba(0,200,255,.1);padding:7px 14px;border-radius:8px;display:inline-block">
+          🌐 Abrir ${feed.name}
+        </a>
+      </div>`;
+    return;
+  }
+
+  // Parse RSS/Atom XML
   try {
-    const res = await fetch(apiUrl);
-    if(!res.ok) throw new Error("rss2json failed");
-    const data = await res.json();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, "text/xml");
+    // Support both RSS <item> and Atom <entry>
+    const items = Array.from(doc.querySelectorAll("item, entry")).slice(0,3);
+    if(items.length === 0) throw new Error("no items");
 
-    if(data.status !== "ok" || !data.items || data.items.length === 0) throw new Error("no items");
-
-    const items = data.items.slice(0,3).map(item => {
-      const title = item.title?.replace(/<[^>]+>/g,"").trim() || "";
-      const date = item.pubDate ? new Date(item.pubDate).toLocaleDateString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
-      const link = item.link || "#";
+    const html = items.map(item => {
+      const title = (item.querySelector("title")?.textContent || "").replace(/<[^>]+>/g,"").trim();
+      const link  = item.querySelector("link")?.textContent?.trim()
+                 || item.querySelector("link")?.getAttribute("href")
+                 || "#";
+      const pubDate = item.querySelector("pubDate, published, updated")?.textContent || "";
+      const date = pubDate ? new Date(pubDate).toLocaleDateString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
       return `
         <div style="margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.06)">
           <div style="font-size:11.5px;color:#ccddf0;line-height:1.5;margin-bottom:4px">${title}</div>
@@ -332,21 +364,12 @@ async function fetchNews(city){
         </div>`;
     }).join("");
 
-    newsEl.innerHTML = items;
-
+    newsEl.innerHTML = html;
   } catch(e) {
-    // Fallback: direct link to newspaper
-    newsEl.innerHTML = `
-      <div style="text-align:center;padding:10px">
-        <div style="font-size:11px;color:#7799bb;margin-bottom:10px">No se pudo cargar el feed de ${feed.name}.</div>
-        <a href="${feed.rss.replace('/feed','').replace('/rss','').replace('.xml','').split('/').slice(0,3).join('/')}" 
-           target="_blank" 
-           style="font-size:11px;color:#00c8ff;text-decoration:none;background:rgba(0,200,255,.1);padding:7px 14px;border-radius:8px;display:inline-block">
-          🌐 Abrir ${feed.name}
-        </a>
-      </div>`;
+    newsEl.innerHTML = '<div class="news-error">Error al leer el feed.</div>';
   }
 }
+
 
 function timeAgo(utc){
   const diff=Math.floor(Date.now()/1000)-utc;
