@@ -218,6 +218,69 @@ const COUNTRY_MAP={
   "Nowy Duninów":"Polonia","Bisha":"Eritrea",
 };
 
+async function fetchWeather(city){
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=auto&forecast_days=7`;
+    const d=await(await fetch(url)).json();
+    const cur=d.current,day=d.daily;
+    const temp=Math.round(cur.temperature_2m);
+    const tmax=Math.round(day.temperature_2m_max[0]);
+    const tmin=Math.round(day.temperature_2m_min[0]);
+    const rain=(day.precipitation_sum[0]??0).toFixed(1);
+    const code=cur.weathercode;
+    const now=new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"});
+    // Alert banner
+    const msgs=alertMessages(city.name,temp,parseFloat(rain));
+    const ab=document.getElementById("ab");
+    if(msgs.length){
+      const lv=alertLevel(city.name,temp,parseFloat(rain));
+      ab.className=`abanner show ${lv}`;
+      ab.innerHTML=(lv==="crit"?"🔴 ":"⚠️ ")+"<div>"+msgs.join("<br>")+"</div>";
+    }
+    // Forecast 7 days
+    const today=new Date();
+    let fc='<div class="fct">📅 Pronóstico 7 días</div><div class="fcw">';
+    for(let i=0;i<7;i++){
+      const dt=new Date(today);dt.setDate(today.getDate()+i);
+      const dw=i===0?"Hoy":DOW[dt.getDay()];
+      fc+=`<div class="fcd${i===0?" today":""}">
+        <div class="dow">${dw}</div>
+        <div class="fi">${emoji(day.weathercode[i])}</div>
+        <div class="fh">${Math.round(day.temperature_2m_max[i])}°</div>
+        <div class="fl">${Math.round(day.temperature_2m_min[i])}°</div>
+        <div class="fr">${(day.precipitation_sum[i]??0).toFixed(1)}mm</div>
+      </div>`;
+    }
+    fc+='</div>';
+    document.getElementById("pb").innerHTML=`
+      <div id="local-time-block"></div>
+      <div class="row1">
+        <div class="ico">${emoji(code)}</div>
+        <div class="tr"><div class="tv">${temp}°C</div><div class="tc">${label(code)}</div></div>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="v hi">${tmax}°C</div><div class="l">🔺 Máxima</div></div>
+        <div class="card"><div class="v lo">${tmin}°C</div><div class="l">🔻 Mínima</div></div>
+        <div class="card"><div class="v rn">${rain} mm</div><div class="l">🌧️ Lluvia hoy</div></div>
+      </div>${fc}`;
+    // Local time
+    const tz=d.timezone;
+    const localTime=new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone:tz});
+    const localDate=new Date().toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"short",timeZone:tz});
+    document.getElementById("pf").textContent=`Actualizado · ${now} hora local · Open-Meteo`;
+    document.getElementById("local-time-block").innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.042);border-radius:8px;padding:9px 13px;margin-bottom:10px">
+        <div style="font-size:11px;color:#556680">🕐 Hora local en ${city.name}</div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:#00c8ff;letter-spacing:1px">${localTime}</div>
+          <div style="font-size:10px;color:#556680;margin-top:2px;text-transform:capitalize">${localDate}</div>
+        </div>
+      </div>`;
+  }catch(e){
+    document.getElementById("pb").innerHTML='<div class="err">No se pudo cargar el clima.<br>Verifica tu conexión a internet.</div>';
+  }
+}
+
 async function fetchNews(city){
   const country = COUNTRY_MAP[city.name] || city.loc.split(",").pop().trim();
   const newsEl = document.getElementById("news-content");
