@@ -223,62 +223,101 @@ async function fetchNews(city){
   const newsEl = document.getElementById("news-content");
   newsEl.innerHTML = '<div class="news-loading">⏳ Buscando noticias de ' + country + '...</div>';
 
-  // Language map for better results
-  const LANG_MAP = {
-    "Chile":"es","Perú":"es","España":"es","Costa de Marfil":"fr",
-    "Burkina Faso":"fr","Rumanía":"ro","Polonia":"pl","Kazajistán":"ru",
-    "Australia":"en","Reino Unido":"en","Estados Unidos":"en",
-    "Zambia":"en","Ghana":"en","Egipto":"ar","Eritrea":"en",
+  // Map countries to Guardian search terms and language
+  const SEARCH_MAP = {
+    "Chile":"Chile","Perú":"Peru","España":"Spain","Costa de Marfil":"Ivory Coast",
+    "Burkina Faso":"Burkina Faso","Rumanía":"Romania","Polonia":"Poland",
+    "Kazajistán":"Kazakhstan","Australia":"Australia","Reino Unido":"United Kingdom",
+    "Estados Unidos":"United States","Zambia":"Zambia","Ghana":"Ghana",
+    "Egipto":"Egypt","Eritrea":"Eritrea",
   };
-  const lang = LANG_MAP[country] || "en";
+  const searchTerm = SEARCH_MAP[country] || country;
 
-  // Country code map for GNews
-  const CC_MAP = {
-    "Chile":"cl","Perú":"pe","España":"es","Costa de Marfil":"ci",
-    "Burkina Faso":"bf","Rumanía":"ro","Polonia":"pl","Kazajistán":"kz",
-    "Australia":"au","Reino Unido":"gb","Estados Unidos":"us",
-    "Zambia":"zw","Ghana":"gh","Egipto":"eg","Eritrea":"er",
-  };
-  const cc = CC_MAP[country] || "us";
+  // Try sources in order until one works
+  const sources = [
+    () => fetchFromGuardian(searchTerm, country, newsEl),
+    () => fetchFromWikipediaNews(searchTerm, country, newsEl),
+    () => fetchFromReliefWeb(searchTerm, country, newsEl),
+  ];
 
-  try {
-    // Use RSS2JSON to proxy GNews RSS feed (no API key needed)
-    const query = encodeURIComponent(country);
-    const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=${lang}&gl=${cc.toUpperCase()}&ceid=${cc.toUpperCase()}:${lang}`;
-    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=1`;
-
-    const res = await fetch(apiUrl);
-    const data = await res.json();
-
-    if(data.status === "ok" && data.items && data.items.length > 0){
-      const item = data.items[0];
-      const title = item.title || "";
-      const pubDate = item.pubDate ? new Date(item.pubDate).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : "";
-      const source = item.author || extractSource(item.title) || "Google News";
-      const link = item.link || "#";
-
-      // Clean title: remove source suffix like " - BBC News"
-      const cleanTitle = title.replace(/\s*-\s*[^-]+$/, "").trim();
-
-      newsEl.innerHTML = `
-        <div style="font-size:12px;color:#ccddf0;line-height:1.6;margin-bottom:8px">${cleanTitle}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-          <a href="${link}" target="_blank" style="font-size:10px;color:#00c8ff;text-decoration:none;opacity:.8">🔗 ${source}</a>
-          <span style="font-size:9.5px;color:#3a5060">${pubDate}</span>
-        </div>`;
-    } else {
-      // Fallback: try NewsAPI.org public endpoint
-      await fetchNewsFallback(city, country, newsEl);
-    }
-  } catch(e) {
-    await fetchNewsFallback(city, country, newsEl);
+  for(const source of sources){
+    const ok = await source();
+    if(ok) return;
   }
+  newsEl.innerHTML = '<div class="news-error">No se encontraron noticias en este momento.</div>';
 }
 
-function extractSource(title){
-  if(!title) return "";
-  const m = title.match(/- ([^-]+)$/);
-  return m ? m[1].trim() : "";
+async function fetchFromGuardian(searchTerm, country, newsEl){
+  try{
+    // The Guardian open platform - "test" key works from browsers
+    const url = `https://content.guardianapis.com/search?q=${encodeURIComponent(searchTerm)}&order-by=newest&show-fields=trailText,headline&page-size=1&api-key=test`;
+    const res = await fetch(url);
+    if(!res.ok) return false;
+    const data = await res.json();
+    const results = data?.response?.results;
+    if(!results || results.length === 0) return false;
+    const item = results[0];
+    const headline = item.fields?.headline || item.webTitle || "";
+    const trail = item.fields?.trailText || "";
+    const date = item.webPublicationDate ? new Date(item.webPublicationDate).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : "";
+    const link = item.webUrl || "#";
+    // Strip HTML tags from trailText
+    const cleanTrail = trail.replace(/<[^>]+>/g,"");
+    newsEl.innerHTML = `
+      <div style="font-size:12px;font-weight:600;color:#ccddf0;line-height:1.5;margin-bottom:6px">${headline}</div>
+      ${cleanTrail ? `<div style="font-size:11px;color:#8899bb;line-height:1.5;margin-bottom:8px">${cleanTrail}</div>` : ""}
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <a href="${link}" target="_blank" style="font-size:10px;color:#00c8ff;text-decoration:none">🔗 The Guardian</a>
+        <span style="font-size:9.5px;color:#3a5060">${date}</span>
+      </div>`;
+    return true;
+  }catch(e){ return false; }
+}
+
+async function fetchFromWikipediaNews(searchTerm, country, newsEl){
+  try{
+    // Wikipedia "in the news" via DuckDuckGo instant answer (no key, CORS ok)
+    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(searchTerm+" news")}&format=json&no_html=1&skip_disambig=1`;
+    const res = await fetch(url);
+    if(!res.ok) return false;
+    const data = await res.json();
+    const abstract = data?.AbstractText || data?.Answer || "";
+    if(!abstract || abstract.length < 30) return false;
+    const source = data?.AbstractSource || "DuckDuckGo";
+    const sourceUrl = data?.AbstractURL || "#";
+    newsEl.innerHTML = `
+      <div style="font-size:12px;color:#ccddf0;line-height:1.6;margin-bottom:8px">${abstract.slice(0,280)}${abstract.length>280?"…":""}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <a href="${sourceUrl}" target="_blank" style="font-size:10px;color:#00c8ff;text-decoration:none">🔗 ${source}</a>
+      </div>`;
+    return true;
+  }catch(e){ return false; }
+}
+
+async function fetchFromReliefWeb(searchTerm, country, newsEl){
+  try{
+    // ReliefWeb API - humanitarian news, no key needed, CORS enabled
+    const url = `https://api.reliefweb.int/v1/reports?appname=climamaxam&filter[field]=country.name&filter[value]=${encodeURIComponent(searchTerm)}&sort[]=date:desc&limit=1&fields[include][]=title&fields[include][]=body-html&fields[include][]=source&fields[include][]=date&fields[include][]=url`;
+    const res = await fetch(url);
+    if(!res.ok) return false;
+    const data = await res.json();
+    const items = data?.data;
+    if(!items || items.length === 0) return false;
+    const item = items[0].fields;
+    const title = item.title || "";
+    const body = (item["body-html"]||"").replace(/<[^>]+>/g,"").slice(0,250);
+    const source = item.source?.[0]?.name || "ReliefWeb";
+    const date = item.date?.created ? new Date(item.date.created).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : "";
+    const link = item.url || "#";
+    newsEl.innerHTML = `
+      <div style="font-size:12px;font-weight:600;color:#ccddf0;line-height:1.5;margin-bottom:6px">${title}</div>
+      ${body ? `<div style="font-size:11px;color:#8899bb;line-height:1.5;margin-bottom:8px">${body}…</div>` : ""}
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <a href="${link}" target="_blank" style="font-size:10px;color:#00c8ff;text-decoration:none">🔗 ${source}</a>
+        <span style="font-size:9.5px;color:#3a5060">${date}</span>
+      </div>`;
+    return true;
+  }catch(e){ return false; }
 }
 
 async function fetchNewsFallback(city, country, newsEl){
