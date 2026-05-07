@@ -284,89 +284,78 @@ async function fetchWeather(city){
 async function fetchNews(city){
   const country = COUNTRY_MAP[city.name] || city.loc.split(",").pop().trim();
   const newsEl = document.getElementById("news-content");
-  newsEl.innerHTML = '<div class="news-loading">⏳ Buscando titulares de ' + country + '...</div>';
+  newsEl.innerHTML = '<div class="news-loading">⏳ Buscando noticias de ' + country + '...</div>';
 
-  // Wikipedia search terms per country
-  const WIKI_MAP = {
-    "Chile":"Chile","Perú":"Peru","España":"Spain","Costa de Marfil":"Ivory Coast Côte d'Ivoire",
-    "Burkina Faso":"Burkina Faso","Rumanía":"Romania","Polonia":"Poland",
-    "Kazajistán":"Kazakhstan","Australia":"Australia","Reino Unido":"United Kingdom",
-    "Estados Unidos":"West Virginia United States","Zambia":"Zambia","Ghana":"Ghana",
-    "Egipto":"Egypt","Eritrea":"Eritrea",
+  const SUBREDDIT = {
+    "Chile":"chile","Perú":"peru","España":"spain",
+    "Costa de Marfil":"worldnews","Burkina Faso":"worldnews",
+    "Rumanía":"romania","Polonia":"poland","Kazajistán":"worldnews",
+    "Australia":"australia","Reino Unido":"unitedkingdom",
+    "Estados Unidos":"worldnews","Zambia":"worldnews",
+    "Ghana":"ghana","Egipto":"egypt","Eritrea":"worldnews",
   };
-  const searchTerm = WIKI_MAP[country] || country;
-
-  // Wikipedia language per country
-  const WIKI_LANG = {
-    "España":"es","Chile":"es","Perú":"es","Rumanía":"ro","Polonia":"pl",
-  };
-  const lang = WIKI_LANG[country] || "en";
+  const sub = SUBREDDIT[country] || "worldnews";
 
   try {
-    // Wikipedia search API - supports CORS from browsers with origin=*
-    const year = new Date().getFullYear();
-    const month = new Date().toLocaleString("en",{month:"long"});
-    const query = `${searchTerm} ${month} ${year}`;
-    const url = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=5&srprop=snippet|titlesnippet`;
+    // Reddit JSON API - free, no key, CORS enabled
+    // Use worldnews with country search for countries without own subreddit
+    let url;
+    if(sub === "worldnews"){
+      url = `https://www.reddit.com/r/worldnews/search.json?q=${encodeURIComponent(country)}&sort=new&limit=3&restrict_sr=1&t=week`;
+    } else {
+      url = `https://www.reddit.com/r/${sub}/top.json?limit=3&t=day`;
+    }
 
-    const res = await fetch(url);
-    if(!res.ok) throw new Error("Wikipedia fetch failed");
+    const res = await fetch(url, {headers:{"Accept":"application/json"}});
+    if(!res.ok) throw new Error("Reddit fetch failed");
     const data = await res.json();
-    const results = data?.query?.search;
+    const posts = data?.data?.children;
 
-    if(!results || results.length === 0){
-      // Fallback: search just country name
-      await fetchWikiBasic(lang, searchTerm, country, newsEl);
-      return;
-    }
+    if(!posts || posts.length === 0) throw new Error("No posts");
 
-    // Filter out disambiguation pages, show up to 3 results
-    const filtered = results
-      .filter(r => !r.title.includes("disambiguation") && !r.title.includes("desambiguación"))
-      .slice(0, 3);
+    const items = posts
+      .filter(p => !p.data.stickied)
+      .slice(0,3)
+      .map(p => {
+        const d = p.data;
+        const title = d.title || "";
+        const source = d.domain || "Reddit";
+        const url = d.url || `https://reddit.com${d.permalink}`;
+        const redditUrl = `https://reddit.com${d.permalink}`;
+        const age = timeAgo(d.created_utc);
+        const score = d.score > 0 ? `⬆️ ${d.score}` : "";
+        return `
+          <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="font-size:11.5px;color:#ccddf0;line-height:1.5;margin-bottom:5px">${title}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+              <div style="display:flex;gap:8px;align-items:center">
+                <a href="${url}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 ${source}</a>
+                <a href="${redditUrl}" target="_blank" style="font-size:9.5px;color:#ff6644;text-decoration:none">💬 r/${sub}</a>
+              </div>
+              <div style="display:flex;gap:6px;font-size:9px;color:#3a5060">
+                <span>${score}</span>
+                <span>${age}</span>
+              </div>
+            </div>
+          </div>`;
+      }).join("");
 
-    if(filtered.length === 0){
-      await fetchWikiBasic(lang, searchTerm, country, newsEl);
-      return;
-    }
-
-    const items = filtered.map(r => {
-      const title = r.title;
-      const snippet = r.snippet.replace(/<[^>]+>/g,"").replace(/&quot;/g,'"').replace(/&#039;/g,"'").replace(/&amp;/g,"&");
-      const wikiUrl = `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g,"_"))}`;
-      return `
-        <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
-          <div style="font-size:11.5px;font-weight:600;color:#ccddf0;margin-bottom:3px">${title}</div>
-          <div style="font-size:10.5px;color:#7799bb;line-height:1.5;margin-bottom:4px">${snippet}…</div>
-          <a href="${wikiUrl}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 Wikipedia</a>
-        </div>`;
-    }).join("");
-
-    newsEl.innerHTML = items;
+    newsEl.innerHTML = items || '<div class="news-error">No se encontraron noticias recientes.</div>';
 
   } catch(e) {
-    await fetchWikiBasic(lang, searchTerm, country, newsEl);
+    newsEl.innerHTML = `<div class="news-error">No se pudieron cargar noticias de ${country}.<br>
+      <a href="https://www.google.com/search?q=noticias+${encodeURIComponent(country)}&tbm=nws" 
+         target="_blank" style="color:#00c8ff;font-size:10px">🔗 Ver en Google News</a></div>`;
   }
 }
 
-async function fetchWikiBasic(lang, searchTerm, country, newsEl){
-  try {
-    // Fallback: just get the Wikipedia page summary for the country
-    const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(searchTerm.split(" ")[0])}`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error("failed");
-    const data = await res.json();
-    const extract = data?.extract || "";
-    if(!extract) throw new Error("no extract");
-    const snippet = extract.slice(0, 300);
-    const wikiUrl = data?.content_urls?.desktop?.page || "#";
-    newsEl.innerHTML = `
-      <div style="font-size:11px;color:#7799bb;line-height:1.5;margin-bottom:8px">${snippet}…</div>
-      <a href="${wikiUrl}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 Wikipedia · ${country}</a>`;
-  } catch(e2) {
-    newsEl.innerHTML = '<div class="news-error">No se encontraron noticias en este momento.</div>';
-  }
+function timeAgo(utc){
+  const diff = Math.floor(Date.now()/1000) - utc;
+  if(diff < 3600) return Math.floor(diff/60) + "m";
+  if(diff < 86400) return Math.floor(diff/3600) + "h";
+  return Math.floor(diff/86400) + "d";
 }
+
 
 async function loadMap(){
   const svg=document.getElementById("map");
