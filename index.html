@@ -357,6 +357,58 @@ function timeAgo(utc){
 }
 
 
+function fixLabelOverlap(){
+  const PIN_R = 6;
+  const ABOVE = -11;
+  const BELOW = 18;
+  const W = 52, H = 11;
+
+  const labels = [];
+  document.querySelectorAll("#map .pin text").forEach(el => {
+    const g = el.parentNode;
+    const tf = g.getAttribute("transform");
+    const m = tf.match(/translate\(([^,]+),([^)]+)\)/);
+    if(!m) return;
+    const cx = parseFloat(m[1]), cy = parseFloat(m[2]);
+    labels.push({el, cx, cy, offX:0, offY:ABOVE, flipped:false});
+  });
+
+  // Pass 1: flip labels that overlap a nearby pin circle
+  for(let i=0; i<labels.length; i++){
+    for(let j=0; j<labels.length; j++){
+      if(i===j) continue;
+      const a=labels[i], b=labels[j];
+      const lx=a.cx+a.offX, ly=a.cy+a.offY;
+      const dx=Math.abs(lx-b.cx), dy=Math.abs(ly-b.cy);
+      if(dx<W/2 && dy<PIN_R+H){ a.offY=BELOW; a.flipped=true; }
+    }
+  }
+
+  // Pass 2: push labels that still overlap each other
+  for(let iter=0; iter<10; iter++){
+    for(let i=0; i<labels.length; i++){
+      for(let j=i+1; j<labels.length; j++){
+        const a=labels[i], b=labels[j];
+        const ax=a.cx+a.offX, ay=a.cy+a.offY;
+        const bx=b.cx+b.offX, by=b.cy+b.offY;
+        const dx=Math.abs(ax-bx), dy=Math.abs(ay-by);
+        if(dx<W && dy<H){
+          if(!a.flipped){ a.offY=BELOW; a.flipped=true; continue; }
+          if(!b.flipped){ b.offY=BELOW; b.flipped=true; continue; }
+          const hpush=(W-dx)/2+1;
+          if(ax<=bx){ a.offX-=hpush/2; b.offX+=hpush/2; }
+          else       { a.offX+=hpush/2; b.offX-=hpush/2; }
+        }
+      }
+    }
+  }
+
+  labels.forEach(({el,offX,offY})=>{
+    el.setAttribute("x",offX.toFixed(1));
+    el.setAttribute("y",offY.toFixed(1));
+  });
+}
+
 async function loadMap(){
   const svg=document.getElementById("map");
   svg.appendChild(mk("rect",{class:"ocean",width:960,height:500}));
