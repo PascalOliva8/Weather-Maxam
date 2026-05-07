@@ -30,7 +30,7 @@
   .pin.warn text{fill:#ffd980}
   .pin.crit text{fill:#ffaaaa}
 
-  #popup{position:absolute;display:none;z-index:200;background:#07101f;border:1px solid #1a3360;border-radius:14px;width:295px;box-shadow:0 10px 55px rgba(0,60,220,.5);overflow:hidden}
+  #popup{position:absolute;display:none;z-index:200;background:#07101f;border:1px solid #1a3360;border-radius:14px;width:320px;box-shadow:0 10px 55px rgba(0,60,220,.5);overflow:hidden}
   .ph{background:linear-gradient(135deg,#0d1e50,#08122e);padding:12px 15px 10px;display:flex;justify-content:space-between;align-items:flex-start}
   .ph .cn{font-size:14px;font-weight:700}
   .ph .cl{font-size:10px;color:#6688bb;margin-top:2px}
@@ -60,6 +60,11 @@
   .fcd .fl{font-size:9.5px;color:#4499ff;margin-top:1px}
   .fcd .fr{font-size:8.5px;color:#33ddaa;margin-top:2px}
   .pf{padding:5px 15px 10px;font-size:9.5px;color:#2e3d50;text-align:center}
+  .news-section{margin-top:10px;border-top:1px solid rgba(255,255,255,.07);padding-top:10px}
+  .news-title{font-size:10px;color:#556680;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+  .news-content{font-size:11.5px;color:#ccddf0;line-height:1.6;background:rgba(255,255,255,.03);border-radius:8px;padding:9px 11px}
+  .news-loading{font-size:11px;color:#3a5060;text-align:center;padding:10px}
+  .news-error{font-size:10px;color:#556680;text-align:center;padding:8px}
   .loading{text-align:center;padding:22px;color:#3a5060;font-size:12px}
   .err{color:#ff5566;text-align:center;padding:18px;font-size:11px}
 </style>
@@ -88,6 +93,10 @@
   <div class="abanner" id="ab"></div>
   <div class="pb" id="pb"><div class="loading">⏳ Cargando...</div></div>
   <div class="pf" id="pf"></div>
+  <div class="news-section" id="news-section" style="padding:0 15px 12px">
+    <div class="news-title">📰 Noticia del día</div>
+    <div class="news-content" id="news-content"><div class="news-loading">⏳ Buscando noticias...</div></div>
+  </div>
 </div>
 <script>
 const CITIES=[
@@ -195,8 +204,101 @@ function openPopup(city,cx,cy){
   if(px+305>wr.width)px-=318;if(py<8)py=8;if(py+500>wr.height)py=Math.max(8,wr.height-508);
   pop.style.left=px+"px";pop.style.top=py+"px";pop.style.display="block";
   fetchWeather(city);
+  fetchNews(city);
 }
 function closePopup(){document.getElementById("popup").style.display="none";}
+
+const COUNTRY_MAP={
+  "Elenita":"Chile","Escondida":"Chile","La Joya":"Perú",
+  "Lumwana":"Zambia","Lafigué":"Costa de Marfil","Perseus":"Ghana",
+  "Houndé":"Burkina Faso","Sukari":"Egipto","Chesterfield":"Reino Unido",
+  "Páramo de Masa":"España","Ust-Kamenogorsk":"Kazajistán",
+  "McLarty":"Australia","Newman":"Australia","Bajool":"Australia",
+  "West Virginia":"Estados Unidos","Victoria":"Rumanía",
+  "Nowy Duninów":"Polonia","Bisha":"Eritrea",
+};
+
+async function fetchNews(city){
+  const country = COUNTRY_MAP[city.name] || city.loc.split(",").pop().trim();
+  const newsEl = document.getElementById("news-content");
+  newsEl.innerHTML = '<div class="news-loading">⏳ Buscando noticias de ' + country + '...</div>';
+
+  // Language map for better results
+  const LANG_MAP = {
+    "Chile":"es","Perú":"es","España":"es","Costa de Marfil":"fr",
+    "Burkina Faso":"fr","Rumanía":"ro","Polonia":"pl","Kazajistán":"ru",
+    "Australia":"en","Reino Unido":"en","Estados Unidos":"en",
+    "Zambia":"en","Ghana":"en","Egipto":"ar","Eritrea":"en",
+  };
+  const lang = LANG_MAP[country] || "en";
+
+  // Country code map for GNews
+  const CC_MAP = {
+    "Chile":"cl","Perú":"pe","España":"es","Costa de Marfil":"ci",
+    "Burkina Faso":"bf","Rumanía":"ro","Polonia":"pl","Kazajistán":"kz",
+    "Australia":"au","Reino Unido":"gb","Estados Unidos":"us",
+    "Zambia":"zw","Ghana":"gh","Egipto":"eg","Eritrea":"er",
+  };
+  const cc = CC_MAP[country] || "us";
+
+  try {
+    // Use RSS2JSON to proxy GNews RSS feed (no API key needed)
+    const query = encodeURIComponent(country);
+    const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=${lang}&gl=${cc.toUpperCase()}&ceid=${cc.toUpperCase()}:${lang}`;
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=1`;
+
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+
+    if(data.status === "ok" && data.items && data.items.length > 0){
+      const item = data.items[0];
+      const title = item.title || "";
+      const pubDate = item.pubDate ? new Date(item.pubDate).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : "";
+      const source = item.author || extractSource(item.title) || "Google News";
+      const link = item.link || "#";
+
+      // Clean title: remove source suffix like " - BBC News"
+      const cleanTitle = title.replace(/\s*-\s*[^-]+$/, "").trim();
+
+      newsEl.innerHTML = `
+        <div style="font-size:12px;color:#ccddf0;line-height:1.6;margin-bottom:8px">${cleanTitle}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <a href="${link}" target="_blank" style="font-size:10px;color:#00c8ff;text-decoration:none;opacity:.8">🔗 ${source}</a>
+          <span style="font-size:9.5px;color:#3a5060">${pubDate}</span>
+        </div>`;
+    } else {
+      // Fallback: try NewsAPI.org public endpoint
+      await fetchNewsFallback(city, country, newsEl);
+    }
+  } catch(e) {
+    await fetchNewsFallback(city, country, newsEl);
+  }
+}
+
+function extractSource(title){
+  if(!title) return "";
+  const m = title.match(/- ([^-]+)$/);
+  return m ? m[1].trim() : "";
+}
+
+async function fetchNewsFallback(city, country, newsEl){
+  try {
+    // Fallback: use Wikipedia current events summary via REST API
+    const lang = {"España":"es","Chile":"es","Perú":"es","Francia":"fr","Polonia":"pl","Rumanía":"ro"}[country] || "en";
+    const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/Portal:Current_events`);
+    const data = await res.json();
+    if(data && data.extract){
+      const snippet = data.extract.split(".").slice(0,2).join(".") + ".";
+      newsEl.innerHTML = `
+        <div style="font-size:12px;color:#ccddf0;line-height:1.6;margin-bottom:8px">${snippet}</div>
+        <div style="font-size:10px;color:#3a5060;margin-top:6px">📌 Wikipedia Current Events</div>`;
+    } else {
+      newsEl.innerHTML = '<div class="news-error">No se encontraron noticias en este momento.</div>';
+    }
+  } catch(e2){
+    newsEl.innerHTML = '<div class="news-error">No se pudieron cargar las noticias.</div>';
+  }
+}
 
 async function fetchWeather(city){
   try{
