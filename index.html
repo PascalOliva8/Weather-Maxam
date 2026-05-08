@@ -295,31 +295,25 @@ async function fetchNews(city){
   };
   const term = SEARCH_TERMS[country] || country;
 
-  // The Guardian open platform - "test" key works from browsers (up to 12 req/day)
-  // No registration needed, documented for development/testing use
-  const guardianUrl = `https://content.guardianapis.com/search?q=${encodeURIComponent(term)}&order-by=newest&show-fields=headline,trailText,thumbnail&page-size=3&api-key=test`;
-
   try {
-    const res = await fetch(guardianUrl);
-    if(!res.ok) throw new Error("Guardian failed: " + res.status);
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(term)}&sortBy=publishedAt&pageSize=3&language=en&apiKey=9144ae5f95dc47dda13c91c57350b23d`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("status " + res.status);
     const data = await res.json();
-    const results = data?.response?.results;
-    if(!results || results.length === 0) throw new Error("no results");
+    if(data.status !== "ok" || !data.articles || data.articles.length === 0) throw new Error(data.message || "no articles");
 
-    const html = results.map(item => {
-      const headline = item.fields?.headline || item.webTitle || "";
-      const trail = (item.fields?.trailText || "").replace(/<[^>]+>/g,"").slice(0,180);
-      const date = item.webPublicationDate
-        ? new Date(item.webPublicationDate).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"})
-        : "";
-      const link = item.webUrl || "#";
-      const section = item.sectionName || "The Guardian";
+    const html = data.articles.map(a => {
+      const title = a.title?.replace(/ - [^-]+$/, "") || "";
+      const desc  = (a.description || "").slice(0, 180);
+      const source = a.source?.name || "NewsAPI";
+      const date  = a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+      const link  = a.url || "#";
       return `
         <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
-          <div style="font-size:11.5px;font-weight:600;color:#ccddf0;line-height:1.4;margin-bottom:4px">${headline}</div>
-          ${trail ? `<div style="font-size:10.5px;color:#8899bb;line-height:1.5;margin-bottom:5px">${trail}…</div>` : ""}
+          <div style="font-size:11.5px;font-weight:600;color:#ccddf0;line-height:1.4;margin-bottom:4px">${title}</div>
+          ${desc ? `<div style="font-size:10.5px;color:#8899bb;line-height:1.5;margin-bottom:5px">${desc}…</div>` : ""}
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <a href="${link}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 The Guardian · ${section}</a>
+            <a href="${link}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 ${source}</a>
             <span style="font-size:9px;color:#3a5060">${date}</span>
           </div>
         </div>`;
@@ -328,17 +322,13 @@ async function fetchNews(city){
     newsEl.innerHTML = html;
 
   } catch(e) {
-    // Fallback: direct Google News search link for the country
-    const googleUrl = `https://news.google.com/search?q=${encodeURIComponent(term)}&hl=es&gl=ES&ceid=ES:es`;
     newsEl.innerHTML = `
       <div style="text-align:center;padding:10px">
-        <div style="font-size:11px;color:#7799bb;margin-bottom:10px">
-          No se pudo cargar automáticamente.<br>
-          <span style="font-size:10px;color:#445566">(${e.message})</span>
-        </div>
-        <a href="${googleUrl}" target="_blank"
+        <div style="font-size:11px;color:#7799bb;margin-bottom:10px">No se pudieron cargar noticias.<br>
+        <span style="font-size:10px;color:#445566">${e.message}</span></div>
+        <a href="https://news.google.com/search?q=${encodeURIComponent(term)}&hl=es" target="_blank"
            style="font-size:11px;color:#00c8ff;text-decoration:none;background:rgba(0,200,255,.1);padding:7px 14px;border-radius:8px;display:inline-block">
-          🌐 Ver noticias de ${country} en Google News
+          🌐 Ver en Google News
         </a>
       </div>`;
   }
