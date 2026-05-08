@@ -296,38 +296,63 @@ async function fetchNews(city){
   const term = SEARCH_TERMS[country] || country;
 
   try {
-    // GNews.io - works from any browser, 100 req/day free
-    const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(term)}&lang=en&max=3&sortby=publishedAt&apikey=ab454d3cb8518d8b12cd87150ee01f7d`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error("status " + res.status);
-    const data = await res.json();
-    if(!data.articles || data.articles.length === 0) throw new Error("no articles");
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": "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",
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        tools: [{"type": "web_search_20250305", "name": "web_search"}],
+        messages: [{
+          role: "user",
+          content: `Find the 3 most recent and important news headlines about ${term} from the last 7 days. 
+For each one return ONLY a JSON array with this exact format, no other text:
+[
+  {"title": "headline here", "source": "source name", "date": "date", "url": "url if available"},
+  ...
+]`
+        }]
+      })
+    });
 
-    const html = data.articles.map(a => {
-      const title = a.title?.replace(/ - [^-]+$/, "") || "";
-      const desc  = (a.description || "").slice(0, 180);
-      const source = a.source?.name || "GNews";
-      const date  = a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : "";
-      const link  = a.url || "#";
-      return `
-        <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
-          <div style="font-size:11.5px;font-weight:600;color:#ccddf0;line-height:1.4;margin-bottom:4px">${title}</div>
-          ${desc ? `<div style="font-size:10.5px;color:#8899bb;line-height:1.5;margin-bottom:5px">${desc}…</div>` : ""}
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <a href="${link}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 ${source}</a>
-            <span style="font-size:9px;color:#3a5060">${date}</span>
-          </div>
-        </div>`;
-    }).join("");
+    if(!response.ok) throw new Error("API status " + response.status);
+    const data = await response.json();
+
+    // Extract text from response blocks
+    const textBlocks = data.content.filter(b => b.type === "text");
+    const text = textBlocks.map(b => b.text).join("").trim();
+
+    // Parse JSON from response
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if(!jsonMatch) throw new Error("no JSON in response");
+    const articles = JSON.parse(jsonMatch[0]);
+    if(!articles || articles.length === 0) throw new Error("no articles");
+
+    const html = articles.map(a => `
+      <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
+        <div style="font-size:11.5px;font-weight:600;color:#ccddf0;line-height:1.4;margin-bottom:4px">${a.title}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          ${a.url && a.url !== "N/A"
+            ? `<a href="${a.url}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 ${a.source}</a>`
+            : `<span style="font-size:9.5px;color:#556680">🔗 ${a.source}</span>`}
+          <span style="font-size:9px;color:#3a5060">${a.date}</span>
+        </div>
+      </div>`).join("");
 
     newsEl.innerHTML = html;
 
   } catch(e) {
+    const term2 = SEARCH_TERMS[country] || country;
     newsEl.innerHTML = `
       <div style="text-align:center;padding:10px">
         <div style="font-size:11px;color:#7799bb;margin-bottom:10px">No se pudieron cargar noticias.<br>
         <span style="font-size:10px;color:#445566">${e.message}</span></div>
-        <a href="https://news.google.com/search?q=${encodeURIComponent(term)}&hl=es" target="_blank"
+        <a href="https://news.google.com/search?q=${encodeURIComponent(term2)}&hl=es" target="_blank"
            style="font-size:11px;color:#00c8ff;text-decoration:none;background:rgba(0,200,255,.1);padding:7px 14px;border-radius:8px;display:inline-block">
           🌐 Ver en Google News
         </a>
