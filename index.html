@@ -284,64 +284,61 @@ async function fetchWeather(city){
 async function fetchNews(city){
   const country = COUNTRY_MAP[city.name] || city.loc.split(",").pop().trim();
   const newsEl = document.getElementById("news-content");
-  newsEl.innerHTML = '<div class="news-loading">⏳ Buscando evento relevante de ' + country + '...</div>';
+  newsEl.innerHTML = '<div class="news-loading">⏳ Buscando noticias de ' + country + '...</div>';
 
-  // Wikipedia search API with origin=* — designed for browser CORS, always works
-  const WIKI_LANG = {
-    "España":"es","Chile":"es","Perú":"es","Rumanía":"ro","Polonia":"pl",
-  };
-  const lang = WIKI_LANG[country] || "en";
-
-  // Search for most-edited/recent article about this country
   const SEARCH_TERMS = {
-    "Chile":"Chile current events","Perú":"Peru current events",
-    "España":"Spain current events","Costa de Marfil":"Ivory Coast",
-    "Burkina Faso":"Burkina Faso","Rumanía":"Romania current events",
-    "Polonia":"Poland current events","Kazajistán":"Kazakhstan",
-    "Australia":"Australia current events","Reino Unido":"United Kingdom current events",
-    "Estados Unidos":"United States current events","Zambia":"Zambia",
-    "Ghana":"Ghana","Egipto":"Egypt current events","Eritrea":"Eritrea",
+    "Chile":"Chile","Perú":"Peru","España":"Spain","Costa de Marfil":"Ivory Coast",
+    "Burkina Faso":"Burkina Faso","Rumanía":"Romania","Polonia":"Poland",
+    "Kazajistán":"Kazakhstan","Australia":"Australia","Reino Unido":"United Kingdom",
+    "Estados Unidos":"United States","Zambia":"Zambia","Ghana":"Ghana",
+    "Egipto":"Egypt","Eritrea":"Eritrea",
   };
   const term = SEARCH_TERMS[country] || country;
 
+  // The Guardian open platform - "test" key works from browsers (up to 12 req/day)
+  // No registration needed, documented for development/testing use
+  const guardianUrl = `https://content.guardianapis.com/search?q=${encodeURIComponent(term)}&order-by=newest&show-fields=headline,trailText,thumbnail&page-size=3&api-key=test`;
+
   try {
-    // Step 1: search Wikipedia for the most relevant recent article
-    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(term)}&format=json&origin=*&srlimit=5&srprop=snippet|timestamp`;
-    const searchRes = await fetch(searchUrl);
-    if(!searchRes.ok) throw new Error("search failed");
-    const searchData = await searchRes.json();
-    const results = searchData?.query?.search;
+    const res = await fetch(guardianUrl);
+    if(!res.ok) throw new Error("Guardian failed: " + res.status);
+    const data = await res.json();
+    const results = data?.response?.results;
     if(!results || results.length === 0) throw new Error("no results");
 
-    // Step 2: get summary of top result
-    const topTitle = results[0].title;
-    const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topTitle.replace(/ /g,"_"))}`;
-    const summaryRes = await fetch(summaryUrl);
-    if(!summaryRes.ok) throw new Error("summary failed");
-    const summary = await summaryRes.json();
+    const html = results.map(item => {
+      const headline = item.fields?.headline || item.webTitle || "";
+      const trail = (item.fields?.trailText || "").replace(/<[^>]+>/g,"").slice(0,180);
+      const date = item.webPublicationDate
+        ? new Date(item.webPublicationDate).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"})
+        : "";
+      const link = item.webUrl || "#";
+      const section = item.sectionName || "The Guardian";
+      return `
+        <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
+          <div style="font-size:11.5px;font-weight:600;color:#ccddf0;line-height:1.4;margin-bottom:4px">${headline}</div>
+          ${trail ? `<div style="font-size:10.5px;color:#8899bb;line-height:1.5;margin-bottom:5px">${trail}…</div>` : ""}
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <a href="${link}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 The Guardian · ${section}</a>
+            <span style="font-size:9px;color:#3a5060">${date}</span>
+          </div>
+        </div>`;
+    }).join("");
 
-    const extract = summary.extract || results[0].snippet.replace(/<[^>]+>/g,"");
-    const pageUrl = summary.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(topTitle)}`;
-    const lastMod = summary.timestamp ? new Date(summary.timestamp).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : "";
-    const thumbnail = summary.thumbnail?.source || null;
-
-    newsEl.innerHTML = `
-      ${thumbnail ? `<img src="${thumbnail}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;margin-bottom:8px">` : ""}
-      <div style="font-size:12px;font-weight:600;color:#ccddf0;margin-bottom:5px;line-height:1.4">${summary.title || topTitle}</div>
-      <div style="font-size:11px;color:#8899bb;line-height:1.6;margin-bottom:8px">${extract.slice(0,280)}${extract.length>280?"…":""}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <a href="${pageUrl}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 Wikipedia</a>
-        <span style="font-size:9px;color:#3a5060">${lastMod}</span>
-      </div>`;
+    newsEl.innerHTML = html;
 
   } catch(e) {
-    // Final fallback: hardcoded Google News link for the country
+    // Fallback: direct Google News search link for the country
+    const googleUrl = `https://news.google.com/search?q=${encodeURIComponent(term)}&hl=es&gl=ES&ceid=ES:es`;
     newsEl.innerHTML = `
-      <div style="text-align:center;padding:8px">
-        <div style="font-size:11px;color:#7799bb;margin-bottom:10px">No se encontró información reciente.</div>
-        <a href="https://news.google.com/search?q=${encodeURIComponent(country)}&hl=es" target="_blank"
+      <div style="text-align:center;padding:10px">
+        <div style="font-size:11px;color:#7799bb;margin-bottom:10px">
+          No se pudo cargar automáticamente.<br>
+          <span style="font-size:10px;color:#445566">(${e.message})</span>
+        </div>
+        <a href="${googleUrl}" target="_blank"
            style="font-size:11px;color:#00c8ff;text-decoration:none;background:rgba(0,200,255,.1);padding:7px 14px;border-radius:8px;display:inline-block">
-          🌐 Ver noticias de ${country} en Google
+          🌐 Ver noticias de ${country} en Google News
         </a>
       </div>`;
   }
