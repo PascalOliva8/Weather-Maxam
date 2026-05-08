@@ -296,17 +296,18 @@ async function fetchNews(city){
   const term = SEARCH_TERMS[country] || country;
 
   try {
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(term)}&sortBy=publishedAt&pageSize=3&language=en&apiKey=9144ae5f95dc47dda13c91c57350b23d`;
+    // GNews.io - works from any browser, 100 req/day free
+    const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(term)}&lang=en&max=3&sortby=publishedAt&apikey=ab454d3cb8518d8b12cd87150ee01f7d`;
     const res = await fetch(url);
     if(!res.ok) throw new Error("status " + res.status);
     const data = await res.json();
-    if(data.status !== "ok" || !data.articles || data.articles.length === 0) throw new Error(data.message || "no articles");
+    if(!data.articles || data.articles.length === 0) throw new Error("no articles");
 
     const html = data.articles.map(a => {
       const title = a.title?.replace(/ - [^-]+$/, "") || "";
       const desc  = (a.description || "").slice(0, 180);
-      const source = a.source?.name || "NewsAPI";
-      const date  = a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+      const source = a.source?.name || "GNews";
+      const date  = a.publishedAt ? new Date(a.publishedAt).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : "";
       const link  = a.url || "#";
       return `
         <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
