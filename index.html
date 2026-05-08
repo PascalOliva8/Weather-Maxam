@@ -284,89 +284,66 @@ async function fetchWeather(city){
 async function fetchNews(city){
   const country = COUNTRY_MAP[city.name] || city.loc.split(",").pop().trim();
   const newsEl = document.getElementById("news-content");
-  newsEl.innerHTML = '<div class="news-loading">⏳ Buscando noticias de ' + country + '...</div>';
+  newsEl.innerHTML = '<div class="news-loading">⏳ Buscando evento relevante de ' + country + '...</div>';
 
-  const RSS_FEEDS = {
-    "Chile":          {name:"Emol",             rss:"https://www.emol.com/rss/"},
-    "Perú":           {name:"El Comercio",       rss:"https://elcomercio.pe/arc/outboundfeeds/rss/"},
-    "España":         {name:"El País",           rss:"https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada"},
-    "Costa de Marfil":{name:"Fraternité Matin",  rss:"https://www.fratmat.info/feed"},
-    "Burkina Faso":   {name:"Le Faso",           rss:"https://lefaso.net/spip.php?page=backend"},
-    "Rumanía":        {name:"Digi24",            rss:"https://www.digi24.ro/rss"},
-    "Polonia":        {name:"TVN24",             rss:"https://tvn24.pl/najnowsze.xml"},
-    "Kazajistán":     {name:"Astana Times",      rss:"https://astanatimes.com/feed/"},
-    "Australia":      {name:"ABC News AU",       rss:"https://www.abc.net.au/news/feed/51120/rss.xml"},
-    "Reino Unido":    {name:"BBC News",          rss:"https://feeds.bbci.co.uk/news/rss.xml"},
-    "Estados Unidos": {name:"AP News",           rss:"https://feeds.apnews.com/rss/apf-topnews"},
-    "Zambia":         {name:"Zambia Daily Mail",  rss:"https://www.daily-mail.co.zm/feed/"},
-    "Ghana":          {name:"GhanaWeb",          rss:"https://www.ghanaweb.com/GhanaHomePage/RSS/ghanaweb.xml"},
-    "Egipto":         {name:"Egypt Independent", rss:"https://egyptindependent.com/feed/"},
-    "Eritrea":        {name:"Shabait",           rss:"https://shabait.com/feed/"},
+  // Wikipedia search API with origin=* — designed for browser CORS, always works
+  const WIKI_LANG = {
+    "España":"es","Chile":"es","Perú":"es","Rumanía":"ro","Polonia":"pl",
   };
+  const lang = WIKI_LANG[country] || "en";
 
-  const feed = RSS_FEEDS[country];
-  if(!feed){ newsEl.innerHTML='<div class="news-error">Sin fuente configurada.</div>'; return; }
+  // Search for most-edited/recent article about this country
+  const SEARCH_TERMS = {
+    "Chile":"Chile current events","Perú":"Peru current events",
+    "España":"Spain current events","Costa de Marfil":"Ivory Coast",
+    "Burkina Faso":"Burkina Faso","Rumanía":"Romania current events",
+    "Polonia":"Poland current events","Kazajistán":"Kazakhstan",
+    "Australia":"Australia current events","Reino Unido":"United Kingdom current events",
+    "Estados Unidos":"United States current events","Zambia":"Zambia",
+    "Ghana":"Ghana","Egipto":"Egypt current events","Eritrea":"Eritrea",
+  };
+  const term = SEARCH_TERMS[country] || country;
 
-  // Try 3 different CORS proxies in sequence
-  const PROXIES = [
-    url => `https://allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-  ];
+  try {
+    // Step 1: search Wikipedia for the most relevant recent article
+    const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(term)}&format=json&origin=*&srlimit=5&srprop=snippet|timestamp`;
+    const searchRes = await fetch(searchUrl);
+    if(!searchRes.ok) throw new Error("search failed");
+    const searchData = await searchRes.json();
+    const results = searchData?.query?.search;
+    if(!results || results.length === 0) throw new Error("no results");
 
-  let xml = null;
-  for(const proxy of PROXIES){
-    try{
-      const res = await fetch(proxy(feed.rss));
-      if(!res.ok) continue;
-      const text = await res.text();
-      if(text.includes("<item") || text.includes("<entry")){
-        xml = text;
-        break;
-      }
-    }catch(e){ continue; }
-  }
+    // Step 2: get summary of top result
+    const topTitle = results[0].title;
+    const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topTitle.replace(/ /g,"_"))}`;
+    const summaryRes = await fetch(summaryUrl);
+    if(!summaryRes.ok) throw new Error("summary failed");
+    const summary = await summaryRes.json();
 
-  if(!xml){
+    const extract = summary.extract || results[0].snippet.replace(/<[^>]+>/g,"");
+    const pageUrl = summary.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(topTitle)}`;
+    const lastMod = summary.timestamp ? new Date(summary.timestamp).toLocaleDateString("es-ES",{day:"numeric",month:"short",year:"numeric"}) : "";
+    const thumbnail = summary.thumbnail?.source || null;
+
     newsEl.innerHTML = `
-      <div style="text-align:center;padding:10px">
-        <div style="font-size:11px;color:#7799bb;margin-bottom:10px">No se pudo cargar ${feed.name}.</div>
-        <a href="${feed.rss.split('/').slice(0,3).join('/')}" target="_blank"
+      ${thumbnail ? `<img src="${thumbnail}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;margin-bottom:8px">` : ""}
+      <div style="font-size:12px;font-weight:600;color:#ccddf0;margin-bottom:5px;line-height:1.4">${summary.title || topTitle}</div>
+      <div style="font-size:11px;color:#8899bb;line-height:1.6;margin-bottom:8px">${extract.slice(0,280)}${extract.length>280?"…":""}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <a href="${pageUrl}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 Wikipedia</a>
+        <span style="font-size:9px;color:#3a5060">${lastMod}</span>
+      </div>`;
+
+  } catch(e) {
+    // Final fallback: hardcoded Google News link for the country
+    newsEl.innerHTML = `
+      <div style="text-align:center;padding:8px">
+        <div style="font-size:11px;color:#7799bb;margin-bottom:10px">No se encontró información reciente.</div>
+        <a href="https://news.google.com/search?q=${encodeURIComponent(country)}&hl=es" target="_blank"
            style="font-size:11px;color:#00c8ff;text-decoration:none;background:rgba(0,200,255,.1);padding:7px 14px;border-radius:8px;display:inline-block">
-          🌐 Abrir ${feed.name}
+          🌐 Ver noticias de ${country} en Google
         </a>
       </div>`;
-    return;
-  }
-
-  // Parse RSS/Atom XML
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xml, "text/xml");
-    // Support both RSS <item> and Atom <entry>
-    const items = Array.from(doc.querySelectorAll("item, entry")).slice(0,3);
-    if(items.length === 0) throw new Error("no items");
-
-    const html = items.map(item => {
-      const title = (item.querySelector("title")?.textContent || "").replace(/<[^>]+>/g,"").trim();
-      const link  = item.querySelector("link")?.textContent?.trim()
-                 || item.querySelector("link")?.getAttribute("href")
-                 || "#";
-      const pubDate = item.querySelector("pubDate, published, updated")?.textContent || "";
-      const date = pubDate ? new Date(pubDate).toLocaleDateString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
-      return `
-        <div style="margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.06)">
-          <div style="font-size:11.5px;color:#ccddf0;line-height:1.5;margin-bottom:4px">${title}</div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <a href="${link}" target="_blank" style="font-size:9.5px;color:#00c8ff;text-decoration:none">🔗 ${feed.name}</a>
-            <span style="font-size:9px;color:#3a5060">${date}</span>
-          </div>
-        </div>`;
-    }).join("");
-
-    newsEl.innerHTML = html;
-  } catch(e) {
-    newsEl.innerHTML = '<div class="news-error">Error al leer el feed.</div>';
   }
 }
 
