@@ -100,24 +100,24 @@
 </div>
 <script>
 const CITIES=[
-  {name:"Elenita",         loc:"Antofagasta, Chile",                  lat:-23.65,lon:-70.40},
-  {name:"Escondida",       loc:"Antofagasta, Chile",                  lat:-24.27,lon:-69.07},
-  {name:"La Joya",         loc:"Arequipa, Perú",                      lat:-16.50,lon:-71.87},
-  {name:"Lumwana",         loc:"Lumwana, Zambia",                     lat:-12.38,lon:25.83},
-  {name:"Lafigué",         loc:"Lafigué, Costa de Marfil",            lat:8.23,lon:-6.15},
-  {name:"Perseus",         loc:"Ayanfuri, Ghana",                     lat:5.88,lon:-1.97},
-  {name:"Houndé",          loc:"Houndé, Burkina Faso",                lat:11.49,lon:-3.01},
-  {name:"Sukari",          loc:"Marsa Alam, Egipto",                  lat:24.88,lon:34.87},
-  {name:"Chesterfield",    loc:"Chesterfield, UK",                    lat:53.24,lon:-1.42},
-  {name:"Páramo de Masa",  loc:"Quintanilla s/Sierra, Burgos, España",lat:42.82,lon:-3.52},
-  {name:"Ust-Kamenogorsk", loc:"Oskemen, Kazajistán",                 lat:49.98,lon:82.61},
-  {name:"McLarty",         loc:"Yarloop, Australia",                  lat:-32.95,lon:115.90},
-  {name:"Newman",          loc:"West Australia, Australia",           lat:-23.36,lon:119.73},
-  {name:"Bajool",          loc:"Queensland, Australia",               lat:-23.64,lon:150.58},
-  {name:"West Virginia",   loc:"Hernshaw, West Virginia, EE.UU.",     lat:38.07,lon:-81.70},
-  {name:"Victoria",        loc:"Victoria, Rumanía",                   lat:43.73,lon:28.58},
-  {name:"Nowy Duninów",    loc:"Nowy Duninów, Polonia",               lat:52.47,lon:19.72},
-  {name:"Bisha",           loc:"Bisha, Eritrea",                      lat:14.85,lon:37.55},
+  {name:"Elenita",         loc:"Antofagasta, Chile",                  lat:-23.65,lon:-70.40, elev:1050},
+  {name:"Escondida",       loc:"Antofagasta, Chile",                  lat:-24.27,lon:-69.07, elev:3100},
+  {name:"La Joya",         loc:"Arequipa, Perú",                      lat:-16.50,lon:-71.87, elev:1300},
+  {name:"Lumwana",         loc:"Lumwana, Zambia",                     lat:-12.38,lon:25.83,  elev:1150},
+  {name:"Lafigué",         loc:"Lafigué, Costa de Marfil",            lat:8.23,lon:-6.15,    elev:320},
+  {name:"Perseus",         loc:"Ayanfuri, Ghana",                     lat:5.88,lon:-1.97,    elev:210},
+  {name:"Houndé",          loc:"Houndé, Burkina Faso",                lat:11.49,lon:-3.01,   elev:310},
+  {name:"Sukari",          loc:"Marsa Alam, Egipto",                  lat:24.88,lon:34.87,   elev:480},
+  {name:"Chesterfield",    loc:"Chesterfield, UK",                    lat:53.24,lon:-1.42,   elev:70},
+  {name:"Páramo de Masa",  loc:"Quintanilla s/Sierra, Burgos, España",lat:42.82,lon:-3.52,   elev:1050},
+  {name:"Ust-Kamenogorsk", loc:"Oskemen, Kazajistán",                 lat:49.98,lon:82.61,   elev:280},
+  {name:"McLarty",         loc:"Yarloop, Australia",                  lat:-32.95,lon:115.90, elev:30},
+  {name:"Newman",          loc:"West Australia, Australia",           lat:-23.36,lon:119.73, elev:520},
+  {name:"Bajool",          loc:"Queensland, Australia",               lat:-23.64,lon:150.58, elev:18},
+  {name:"West Virginia",   loc:"Hernshaw, West Virginia, EE.UU.",     lat:38.07,lon:-81.70,  elev:290},
+  {name:"Victoria",        loc:"Victoria, Rumanía",                   lat:43.73,lon:28.58,   elev:15},
+  {name:"Nowy Duninów",    loc:"Nowy Duninów, Polonia",               lat:52.47,lon:19.72,   elev:65},
+  {name:"Bisha",           loc:"Bisha, Eritrea",                      lat:14.85,lon:37.55,   elev:1120},
 ];
 // Historical normal ranges [tMin, tMax, rainAlertMm]
 const NORMS={
@@ -268,9 +268,13 @@ async function fetchWeather(city){
     const localTime=new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone:tz});
     const localDate=new Date().toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"short",timeZone:tz});
     document.getElementById("pf").textContent=`Actualizado · ${now} hora local · Open-Meteo`;
+    const elevStr = city.elev !== undefined ? `<div style="font-size:10px;color:#556680;margin-top:3px">⛰️ ${city.elev.toLocaleString()} m s.n.m.</div>` : "";
     document.getElementById("local-time-block").innerHTML=`
       <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.042);border-radius:8px;padding:9px 13px;margin-bottom:10px">
-        <div style="font-size:11px;color:#556680">🕐 Hora local en ${city.name}</div>
+        <div>
+          <div style="font-size:11px;color:#556680">🕐 Hora local en ${city.name}</div>
+          ${elevStr}
+        </div>
         <div style="text-align:right">
           <div style="font-size:20px;font-weight:800;color:#00c8ff;letter-spacing:1px">${localTime}</div>
           <div style="font-size:10px;color:#556680;margin-top:2px;text-transform:capitalize">${localDate}</div>
