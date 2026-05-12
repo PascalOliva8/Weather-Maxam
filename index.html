@@ -438,9 +438,9 @@ document.getElementById("map").addEventListener("click",closePopup);
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
     <div>
       <div style="font-size:10px;font-weight:700;color:#ccddf0">⚗️ Ammonium Nitrate</div>
-      <div style="font-size:8.5px;color:#556680;margin-top:1px">USD/t · May '25 – Apr '26</div>
+      <div style="font-size:8.5px;color:#556680;margin-top:1px">EUR/t · May '25 – Apr '26</div>
     </div>
-    <a href="https://www.indexmundi.com/commodities/?commodity=urea" target="_blank"
+    <a href="https://www.icis.com/explore/resources/news/2024/01/ammonium-nitrate-prices/" target="_blank"
        style="font-size:8.5px;color:#00c8ff;text-decoration:none;background:rgba(0,200,255,.1);padding:3px 7px;border-radius:4px">
       Live ↗
     </a>
@@ -454,21 +454,21 @@ document.getElementById("map").addEventListener("click",closePopup);
 
 <script>
 (function(){
-  // Ammonium nitrate monthly prices USD/t — May 2025 to April 2026
+  // Ammonium nitrate monthly prices EUR/t — May 2025 to April 2026
   // Update monthly by adding new entry at the end
   const DATA = [
-    {m:"May'25", v:325},
-    {m:"Jun'25",  v:328},
-    {m:"Jul'25",  v:330},
-    {m:"Aug'25",  v:327},
-    {m:"Sep'25",  v:322},
-    {m:"Oct'25",  v:318},
-    {m:"Nov'25",  v:315},
-    {m:"Dec'25",  v:315},
-    {m:"Jan'26",  v:318},
-    {m:"Feb'26",  v:322},
-    {m:"Mar'26",  v:325},
-    {m:"Apr'26",  v:320},
+    {m:"May'25", v:299},
+    {m:"Jun'25", v:301},
+    {m:"Jul'25", v:302},
+    {m:"Aug'25", v:298},
+    {m:"Sep'25", v:292},
+    {m:"Oct'25", v:290},
+    {m:"Nov'25", v:288},
+    {m:"Dec'25", v:289},
+    {m:"Jan'26", v:293},
+    {m:"Feb'26", v:298},
+    {m:"Mar'26", v:302},
+    {m:"Apr'26", v:298},
   ];
 
   // Exclude current open month
@@ -535,9 +535,9 @@ document.getElementById("map").addEventListener("click",closePopup);
   // Last value label
   const li=data.length-1;
   ctx.fillStyle="#ccddf0";ctx.font="7.5px sans-serif";ctx.textAlign="center";
-  ctx.fillText("$"+vals[li],xP(li),yP(vals[li])-5);
+  ctx.fillText("€"+vals[li],xP(li),yP(vals[li])-5);
 
-  document.getElementById("an-current").textContent="$"+vals[li]+"/t";
+  document.getElementById("an-current").textContent="€"+vals[li]+"/t";
   document.getElementById("an-month").textContent=data[li].m;
 })();
 </script>
