@@ -444,9 +444,9 @@ document.getElementById("map").addEventListener("click",closePopup);
 <div style="position:absolute;bottom:14px;left:14px;z-index:100;display:flex;flex-direction:column;gap:8px;">
 
   <!-- AMMONIA -->
-  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;padding:10px 13px;width:255px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
+  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;padding:10px 13px;width:272px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
     <div style="font-size:10px;font-weight:700;color:#ccddf0;margin-bottom:2px">🧪 Amoniaco CFR NW Europa</div>
-    <div style="font-size:8px;color:#556680;margin-bottom:6px">EUR/t · Trimestral · Materia prima del AN</div>
+    <div style="font-size:8px;color:#556680;margin-bottom:6px">EUR/t · <span style="color:#ffaa00;font-weight:600">Q = trimestre (3 meses)</span> · Materia prima del AN</div>
     <canvas id="nh3-canvas" style="display:block"></canvas>
     <div style="margin-top:5px">
       <div style="display:flex;gap:8px;font-size:7.5px;margin-bottom:3px">
@@ -459,9 +459,9 @@ document.getElementById("map").addEventListener("click",closePopup);
   </div>
 
   <!-- AMMONIUM NITRATE -->
-  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;padding:10px 13px;width:255px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
+  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;padding:10px 13px;width:272px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
     <div style="font-size:10px;font-weight:700;color:#ccddf0;margin-bottom:2px">⚗️ Nitrato Amónico Europa</div>
-    <div style="font-size:8px;color:#556680;margin-bottom:6px">EUR/t · Trimestral · Precio explosivo base</div>
+    <div style="font-size:8px;color:#556680;margin-bottom:6px">EUR/t · <span style="color:#ffaa00;font-weight:600">Q = trimestre (3 meses)</span> · Precio explosivo base</div>
     <canvas id="an-canvas" style="display:block"></canvas>
     <div style="margin-top:5px">
       <div style="display:flex;gap:8px;font-size:7.5px;margin-bottom:3px">
@@ -533,13 +533,13 @@ document.getElementById("map").addEventListener("click",closePopup);
   function drawChart(canvasId, data, yTicks){
     const canvas = document.getElementById(canvasId);
     const dpr = window.devicePixelRatio||1;
-    const W=231, H=110;
+    const W=248, H=110;
     canvas.width=W*dpr; canvas.height=H*dpr;
     canvas.style.width=W+"px"; canvas.style.height=H+"px";
     const ctx=canvas.getContext("2d");
     ctx.scale(dpr,dpr);
 
-    const PAD={t:10,r:6,b:22,l:38};
+    const PAD={t:10,r:14,b:22,l:28};
     const vals=data.map(d=>d.v);
     const minV=Math.min(...vals)-50, maxV=Math.max(...vals)+50;
     const n=data.length;
@@ -557,7 +557,7 @@ document.getElementById("map").addEventListener("click",closePopup);
     });
 
     // Year separators
-    ctx.strokeStyle="rgba(255,255,255,.09)"; ctx.lineWidth=.5; ctx.setLineDash([2,3]);
+    ctx.strokeStyle="rgba(100,160,255,.35)"; ctx.lineWidth=1; ctx.setLineDash([3,2]);
     ["Q1'23","Q1'24","Q1'25","Q1'26"].forEach(q=>{
       const i=data.findIndex(d=>d.q===q);
       if(i>0){ ctx.beginPath(); ctx.moveTo(xP(i)-((W-PAD.l-PAD.r)/n*0.7)/2-1,PAD.t); ctx.lineTo(xP(i)-((W-PAD.l-PAD.r)/n*0.7)/2-1,H-PAD.b); ctx.stroke(); }
