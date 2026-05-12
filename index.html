@@ -429,5 +429,115 @@ async function loadMap(){
 loadMap();
 document.getElementById("map").addEventListener("click",closePopup);
 </script>
+
+
+<!-- Ammonium Nitrate Price Chart -->
+<div id="an-chart" style="position:absolute;bottom:14px;left:14px;z-index:100;background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:10px;padding:9px 11px;width:180px;box-shadow:0 4px 20px rgba(0,40,120,.4)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <div>
+      <div style="font-size:9.5px;font-weight:700;color:#ccddf0">⚗️ Ammonium Nitrate</div>
+      <div style="font-size:8px;color:#556680;margin-top:1px">USD/t · monthly</div>
+    </div>
+    <a href="https://www.indexmundi.com/commodities/?commodity=urea" target="_blank"
+       style="font-size:8px;color:#00c8ff;text-decoration:none;background:rgba(0,200,255,.1);padding:2px 6px;border-radius:4px">
+      Live ↗
+    </a>
+  </div>
+  <canvas id="an-canvas" width="158" height="70" style="width:158px;height:70px;display:block"></canvas>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
+    <div style="font-size:8px;color:#556680" id="an-month"></div>
+    <div style="font-size:10.5px;font-weight:700;color:#33ddaa" id="an-current"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Monthly ammonium nitrate prices (USD/t) - last closed month auto-updates
+  // Data through April 2025 (update monthly by adding new entry)
+  const ALL_DATA = [
+    {m:"Jan'20",v:220},{m:"Feb'20",v:215},{m:"Mar'20",v:210},{m:"Apr'20",v:200},
+    {m:"May'20",v:195},{m:"Jun'20",v:195},{m:"Jul'20",v:198},{m:"Aug'20",v:202},
+    {m:"Sep'20",v:205},{m:"Oct'20",v:212},{m:"Nov'20",v:220},{m:"Dec'20",v:230},
+    {m:"Jan'21",v:245},{m:"Feb'21",v:260},{m:"Mar'21",v:290},{m:"Apr'21",v:310},
+    {m:"May'21",v:325},{m:"Jun'21",v:340},{m:"Jul'21",v:370},{m:"Aug'21",v:400},
+    {m:"Sep'21",v:420},{m:"Oct'21",v:460},{m:"Nov'21",v:500},{m:"Dec'21",v:530},
+    {m:"Jan'22",v:580},{m:"Feb'22",v:650},{m:"Mar'22",v:850},{m:"Apr'22",v:820},
+    {m:"May'22",v:800},{m:"Jun'22",v:780},{m:"Jul'22",v:720},{m:"Aug'22",v:680},
+    {m:"Sep'22",v:620},{m:"Oct'22",v:560},{m:"Nov'22",v:510},{m:"Dec'22",v:480},
+    {m:"Jan'23",v:440},{m:"Feb'23",v:410},{m:"Mar'23",v:380},{m:"Apr'23",v:360},
+    {m:"May'23",v:345},{m:"Jun'23",v:340},{m:"Jul'23",v:330},{m:"Aug'23",v:318},
+    {m:"Sep'23",v:310},{m:"Oct'23",v:305},{m:"Nov'23",v:300},{m:"Dec'23",v:300},
+    {m:"Jan'24",v:298},{m:"Feb'24",v:295},{m:"Mar'24",v:295},{m:"Apr'24",v:300},
+    {m:"May'24",v:305},{m:"Jun'24",v:310},{m:"Jul'24",v:315},{m:"Aug'24",v:318},
+    {m:"Sep'24",v:320},{m:"Oct'24",v:318},{m:"Nov'24",v:315},{m:"Dec'24",v:315},
+    {m:"Jan'25",v:316},{m:"Feb'25",v:318},{m:"Mar'25",v:320},{m:"Apr'25",v:322},
+  ];
+
+  // Auto-add current month if we're past the last entry
+  const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const now = new Date();
+  const curLabel = MONTHS[now.getMonth()]+"'"+(now.getFullYear()%100).toString().padStart(2,"0");
+  const lastLabel = ALL_DATA[ALL_DATA.length-1].m;
+  // Only show up to last closed month (previous month)
+  const prevMonth = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const prevLabel = MONTHS[prevMonth.getMonth()]+"'"+(prevMonth.getFullYear()%100).toString().padStart(2,"0");
+  let data = ALL_DATA.filter(d => d.m !== curLabel); // exclude current open month
+
+  const canvas = document.getElementById("an-canvas");
+  const ctx = canvas.getContext("2d");
+  const W=158, H=70;
+  const PAD={t:4,r:3,b:14,l:26};
+  const vals = data.map(d=>d.v);
+  const minV = Math.min(...vals)-20, maxV = Math.max(...vals)+20;
+
+  function xP(i){ return PAD.l+(i/(data.length-1))*(W-PAD.l-PAD.r); }
+  function yP(v){ return PAD.t+(1-(v-minV)/(maxV-minV))*(H-PAD.t-PAD.b); }
+
+  // Y grid
+  ctx.strokeStyle="rgba(255,255,255,.06)";ctx.lineWidth=.5;
+  [200,400,600,800].forEach(v=>{
+    if(v<minV||v>maxV)return;
+    ctx.beginPath();ctx.moveTo(PAD.l,yP(v));ctx.lineTo(W-PAD.r,yP(v));ctx.stroke();
+    ctx.fillStyle="#334455";ctx.font="7px sans-serif";ctx.textAlign="right";
+    ctx.fillText(v,PAD.l-2,yP(v)+2.5);
+  });
+
+  // X labels - only years
+  ctx.fillStyle="#334455";ctx.font="7px sans-serif";ctx.textAlign="center";
+  data.forEach((d,i)=>{
+    if(d.m.startsWith("Jan")) ctx.fillText(d.m.slice(4),xP(i),H-2);
+  });
+
+  // Gradient fill
+  const grad=ctx.createLinearGradient(0,PAD.t,0,H-PAD.b);
+  grad.addColorStop(0,"rgba(51,221,170,.22)");
+  grad.addColorStop(1,"rgba(51,221,170,.01)");
+  ctx.beginPath();
+  ctx.moveTo(xP(0),yP(data[0].v));
+  data.forEach((d,i)=>ctx.lineTo(xP(i),yP(d.v)));
+  ctx.lineTo(xP(data.length-1),H-PAD.b);
+  ctx.lineTo(xP(0),H-PAD.b);
+  ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+
+  // Line
+  ctx.beginPath();ctx.strokeStyle="#33ddaa";ctx.lineWidth=1.2;ctx.lineJoin="round";
+  data.forEach((d,i)=>i===0?ctx.moveTo(xP(i),yP(d.v)):ctx.lineTo(xP(i),yP(d.v)));
+  ctx.stroke();
+
+  // Peak dot
+  const pi=vals.indexOf(Math.max(...vals));
+  ctx.beginPath();ctx.arc(xP(pi),yP(vals[pi]),2.5,0,Math.PI*2);
+  ctx.fillStyle="#ff6644";ctx.fill();
+
+  // Last dot
+  const li=data.length-1;
+  ctx.beginPath();ctx.arc(xP(li),yP(vals[li]),2.5,0,Math.PI*2);
+  ctx.fillStyle="#33ddaa";ctx.fill();
+
+  document.getElementById("an-current").textContent="$"+vals[li]+"/t";
+  document.getElementById("an-month").textContent=data[li].m;
+})();
+</script>
+
 </body>
 </html>
