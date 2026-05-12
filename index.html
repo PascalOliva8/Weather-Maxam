@@ -434,7 +434,7 @@ document.getElementById("map").addEventListener("click",closePopup);
 
 
 <!-- Ammonium Nitrate Price Chart -->
-<div id="an-chart" style="position:absolute;bottom:14px;left:14px;z-index:100;background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;padding:10px 13px;width:210px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
+<div id="an-chart" style="position:absolute;bottom:14px;left:14px;z-index:100;background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;padding:11px 14px;width:240px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
     <div>
       <div style="font-size:10px;font-weight:700;color:#ccddf0">⚗️ Ammonium Nitrate</div>
@@ -445,7 +445,7 @@ document.getElementById("map").addEventListener("click",closePopup);
       Live ↗
     </a>
   </div>
-  <canvas id="an-canvas" width="184" height="80" style="width:184px;height:80px;display:block"></canvas>
+  <canvas id="an-canvas" width="212" height="95" style="width:212px;height:95px;display:block"></canvas>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
     <div style="font-size:8.5px;color:#556680">Last: <span id="an-month"></span></div>
     <div style="font-size:11px;font-weight:700;color:#33ddaa" id="an-current"></div>
@@ -480,7 +480,7 @@ document.getElementById("map").addEventListener("click",closePopup);
 
   const canvas = document.getElementById("an-canvas");
   const ctx = canvas.getContext("2d");
-  const W=184, H=80, PAD={t:6,r:6,b:16,l:30};
+  const W=212, H=95, PAD={t:6,r:6,b:16,l:30};
   const vals = data.map(d=>d.v);
   const spread = Math.max(30, Math.max(...vals)-Math.min(...vals)+20);
   const midV = (Math.max(...vals)+Math.min(...vals))/2;
