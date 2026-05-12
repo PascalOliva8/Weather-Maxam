@@ -445,7 +445,7 @@ document.getElementById("map").addEventListener("click",closePopup);
       Live ↗
     </a>
   </div>
-  <canvas id="an-canvas" width="212" height="95" style="width:212px;height:95px;display:block"></canvas>
+  <canvas id="an-canvas" width="212" height="100" style="width:212px;height:100px;display:block"></canvas>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
     <div style="font-size:8.5px;color:#556680">Last: <span id="an-month"></span></div>
     <div style="font-size:11px;font-weight:700;color:#33ddaa" id="an-current"></div>
@@ -479,8 +479,15 @@ document.getElementById("map").addEventListener("click",closePopup);
   if(!data.length){ document.getElementById("an-chart").style.display="none"; return; }
 
   const canvas = document.getElementById("an-canvas");
+  const dpr = window.devicePixelRatio || 1;
+  const CW = 212, CH = 100;
+  canvas.width = CW * dpr;
+  canvas.height = CH * dpr;
+  canvas.style.width = CW + "px";
+  canvas.style.height = CH + "px";
   const ctx = canvas.getContext("2d");
-  const W=212, H=95, PAD={t:6,r:6,b:16,l:30};
+  ctx.scale(dpr, dpr);
+  const W=CW, H=CH, PAD={t:8,r:8,b:20,l:34};
   const vals = data.map(d=>d.v);
   const spread = Math.max(30, Math.max(...vals)-Math.min(...vals)+20);
   const midV = (Math.max(...vals)+Math.min(...vals))/2;
