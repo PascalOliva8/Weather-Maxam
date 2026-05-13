@@ -612,7 +612,7 @@ function drawBarChart(canvasId, data, yTicks, color){
   canvas.width=W*dpr; canvas.height=H*dpr;
   canvas.style.width=W+"px"; canvas.style.height=H+"px";
   const ctx=canvas.getContext("2d"); ctx.scale(dpr,dpr);
-  const PAD={t:10,r:8,b:22,l:36};
+  const PAD={t:10,r:18,b:22,l:36};
   const vals=data.map(d=>d.v);
   const minV=Math.min(...vals)-Math.min(...vals)*0.05;
   const maxV=Math.max(...vals)*1.08;
