@@ -692,78 +692,78 @@ function drawBarChart(canvasId, data, yTicks, color){
 <div style="position:absolute;top:55px;right:14px;z-index:200;display:flex;flex-direction:column;gap:6px;">
 
   <!-- EUROPA -->
-  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
-    <div onclick="toggleNews('eu')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
-      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · Europa</div>
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:215px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('eu')" style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:9.5px;font-weight:700;color:#ccddf0">📰 Titular del día · Europa</div>
       <div id="eu-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
     </div>
-    <div id="eu-body" style="padding:0 12px 9px;display:none">
+    <div id="eu-body" style="padding:0 10px 8px;display:none">
       <div id="eu-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
     </div>
   </div>
 
   <!-- USA -->
-  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
-    <div onclick="toggleNews('us')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
-      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · EE.UU.</div>
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:215px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('us')" style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:9.5px;font-weight:700;color:#ccddf0">📰 Titular del día · EE.UU.</div>
       <div id="us-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
     </div>
-    <div id="us-body" style="padding:0 12px 9px;display:none">
+    <div id="us-body" style="padding:0 10px 8px;display:none">
       <div id="us-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
     </div>
   </div>
 
   <!-- SUDAMÉRICA -->
-  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
-    <div onclick="toggleNews('sa')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
-      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · Sudamérica</div>
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:215px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('sa')" style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:9.5px;font-weight:700;color:#ccddf0">📰 Titular del día · Sudamérica</div>
       <div id="sa-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
     </div>
-    <div id="sa-body" style="padding:0 12px 9px;display:none">
+    <div id="sa-body" style="padding:0 10px 8px;display:none">
       <div id="sa-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
     </div>
   </div>
 
   <!-- CHINA -->
-  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
-    <div onclick="toggleNews('cn')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
-      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · China</div>
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:215px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('cn')" style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:9.5px;font-weight:700;color:#ccddf0">📰 Titular del día · China</div>
       <div id="cn-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
     </div>
-    <div id="cn-body" style="padding:0 12px 9px;display:none">
+    <div id="cn-body" style="padding:0 10px 8px;display:none">
       <div id="cn-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
     </div>
   </div>
 
   <!-- MEDIO ORIENTE -->
-  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
-    <div onclick="toggleNews('me')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
-      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · Medio Oriente</div>
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:215px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('me')" style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:9.5px;font-weight:700;color:#ccddf0">📰 Titular del día · Medio Oriente</div>
       <div id="me-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
     </div>
-    <div id="me-body" style="padding:0 12px 9px;display:none">
+    <div id="me-body" style="padding:0 10px 8px;display:none">
       <div id="me-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
     </div>
   </div>
 
   <!-- JAPÓN -->
-  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
-    <div onclick="toggleNews('jp')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
-      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · Japón</div>
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:215px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('jp')" style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:9.5px;font-weight:700;color:#ccddf0">📰 Titular del día · Japón</div>
       <div id="jp-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
     </div>
-    <div id="jp-body" style="padding:0 12px 9px;display:none">
+    <div id="jp-body" style="padding:0 10px 8px;display:none">
       <div id="jp-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
     </div>
   </div>
 
   <!-- AUSTRALIA -->
-  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
-    <div onclick="toggleNews('au')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
-      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · Australia</div>
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:215px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('au')" style="padding:7px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:9.5px;font-weight:700;color:#ccddf0">📰 Titular del día · Australia</div>
       <div id="au-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
     </div>
-    <div id="au-body" style="padding:0 12px 9px;display:none">
+    <div id="au-body" style="padding:0 10px 8px;display:none">
       <div id="au-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
     </div>
   </div>
