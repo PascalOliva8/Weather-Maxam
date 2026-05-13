@@ -431,7 +431,7 @@ async function loadMap(){
   loadPinColors();
 }
 loadMap();
-fetch('').catch(()=>{}); setTimeout(()=>{ loadEUNews(); euLoaded=true; }, 2000);
+
 document.getElementById("map").addEventListener("click",closePopup);
 </script>
 
@@ -687,58 +687,144 @@ function drawBarChart(canvasId, data, yTicks, color){
 
 
 
-<!-- Europe News Popup -->
-<div id="eu-news" style="position:absolute;top:55px;right:14px;z-index:200;background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:11px;overflow:hidden;width:260px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
-  <div onclick="toggleEUNews()" style="padding:9px 13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
-    <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Europa — Titular del día</div>
-    <div id="eu-arrow" style="font-size:12px;color:#556680;transition:transform .2s">▼</div>
+
+<!-- Regional News Popups -->
+<div style="position:absolute;top:55px;right:14px;z-index:200;display:flex;flex-direction:column;gap:6px;">
+
+  <!-- EUROPA -->
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('eu')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · Europa</div>
+      <div id="eu-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
+    </div>
+    <div id="eu-body" style="padding:0 12px 9px;display:none">
+      <div id="eu-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
+    </div>
   </div>
-  <div id="eu-body" style="padding:0 13px 10px;display:none">
-    <div id="eu-content"><div style="font-size:11px;color:#3a5060;text-align:center;padding:10px">⏳ Cargando...</div></div>
+
+  <!-- USA -->
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('us')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · EE.UU.</div>
+      <div id="us-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
+    </div>
+    <div id="us-body" style="padding:0 12px 9px;display:none">
+      <div id="us-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
+    </div>
   </div>
+
+  <!-- SUDAMÉRICA -->
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('sa')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · Sudamérica</div>
+      <div id="sa-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
+    </div>
+    <div id="sa-body" style="padding:0 12px 9px;display:none">
+      <div id="sa-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
+    </div>
+  </div>
+
+  <!-- CHINA -->
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('cn')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · China</div>
+      <div id="cn-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
+    </div>
+    <div id="cn-body" style="padding:0 12px 9px;display:none">
+      <div id="cn-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
+    </div>
+  </div>
+
+  <!-- MEDIO ORIENTE -->
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('me')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · Medio Oriente</div>
+      <div id="me-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
+    </div>
+    <div id="me-body" style="padding:0 12px 9px;display:none">
+      <div id="me-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
+    </div>
+  </div>
+
+  <!-- JAPÓN -->
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('jp')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · Japón</div>
+      <div id="jp-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
+    </div>
+    <div id="jp-body" style="padding:0 12px 9px;display:none">
+      <div id="jp-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
+    </div>
+  </div>
+
+  <!-- AUSTRALIA -->
+  <div style="background:rgba(7,16,31,.95);border:1px solid #1a3360;border-radius:10px;overflow:hidden;width:255px;box-shadow:0 4px 18px rgba(0,40,120,.4)">
+    <div onclick="toggleNews('au')" style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+      <div style="font-size:10px;font-weight:700;color:#ccddf0">📰 Titular del día · Australia</div>
+      <div id="au-arrow" style="font-size:11px;color:#556680;transition:transform .2s">▼</div>
+    </div>
+    <div id="au-body" style="padding:0 12px 9px;display:none">
+      <div id="au-content"><div style="font-size:10px;color:#3a5060;padding:6px 0">⏳</div></div>
+    </div>
+  </div>
+
 </div>
 
 <script>
-let euLoaded = false;
-function toggleEUNews(){
-  const body  = document.getElementById("eu-body");
-  const arrow = document.getElementById("eu-arrow");
+const NEWS_FEEDS = {
+  eu: [{name:"BBC Europe",    url:"https://feeds.bbci.co.uk/news/world/europe/rss.xml"}],
+  us: [{name:"BBC Americas",  url:"https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml"},
+       {name:"AP News",       url:"https://rsshub.app/apnews/topics/ap-top-news"}],
+  sa: [{name:"BBC Mundo",     url:"https://feeds.bbci.co.uk/mundo/rss.xml"},
+       {name:"BBC Americas",  url:"https://feeds.bbci.co.uk/news/world/latin_america/rss.xml"}],
+  cn: [{name:"Xinhua",        url:"https://www.xinhuanet.com/english/rss/worldrss.xml"},
+       {name:"Reuters Asia",  url:"https://feeds.reuters.com/reuters/asiaNews"}],
+  me: [{name:"BBC Mid East",  url:"https://feeds.bbci.co.uk/news/world/middle_east/rss.xml"}],
+  jp: [{name:"NHK World",     url:"https://www3.nhk.or.jp/rss/news/cat0.xml"},
+       {name:"Japan Times",   url:"https://www.japantimes.co.jp/feed/"}],
+  au: [{name:"ABC News AU",   url:"https://www.abc.net.au/news/feed/51120/rss.xml"},
+       {name:"BBC Asia",      url:"https://feeds.bbci.co.uk/news/world/asia/rss.xml"}],
+};
+
+const PROXIES = [
+  u=>"https://allorigins.win/raw?url="+encodeURIComponent(u),
+  u=>"https://corsproxy.io/?"+encodeURIComponent(u),
+  u=>"https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u),
+];
+
+const loaded = {};
+
+function toggleNews(id){
+  const body  = document.getElementById(id+"-body");
+  const arrow = document.getElementById(id+"-arrow");
   const open  = body.style.display === "none";
   body.style.display = open ? "block" : "none";
   arrow.textContent  = open ? "▲" : "▼";
-  if(open && !euLoaded){ loadEUNews(); euLoaded=true; }
+  if(open && !loaded[id]){ fetchNews(id); loaded[id]=true; }
 }
 
-async function loadEUNews(){
-  const el = document.getElementById("eu-content");
-  const FEEDS = [
-    {name:"BBC Europe",     url:"https://feeds.bbci.co.uk/news/world/europe/rss.xml"},
-    {name:"EuroNews",       url:"https://www.euronews.com/rss"},
-    {name:"Reuters Europe", url:"https://feeds.reuters.com/reuters/europeanews"},
-  ];
-  const PROXIES = [
-    u=>"https://allorigins.win/raw?url="+encodeURIComponent(u),
-    u=>"https://corsproxy.io/?"+encodeURIComponent(u),
-    u=>"https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u),
-  ];
-
-  for(const feed of FEEDS){
+async function fetchNews(id){
+  const el    = document.getElementById(id+"-content");
+  const feeds = NEWS_FEEDS[id] || [];
+  for(const feed of feeds){
     for(const proxy of PROXIES){
       try{
         const res = await fetch(proxy(feed.url));
         if(!res.ok) continue;
         const txt = await res.text();
-        if(!txt.includes("<item")) continue;
-        const doc = new DOMParser().parseFromString(txt,"text/xml");
-        const item = doc.querySelector("item");
+        if(!txt.includes("<item")&&!txt.includes("<entry")) continue;
+        const doc   = new DOMParser().parseFromString(txt,"text/xml");
+        const item  = doc.querySelector("item, entry");
         if(!item) continue;
-        const title = item.querySelector("title")?.textContent?.replace(/<!\[CDATA\[|\]\]>/g,"").trim() || "";
-        const link  = item.querySelector("link")?.textContent?.trim() || "#";
-        const pub   = item.querySelector("pubDate")?.textContent?.trim() || "";
+        const title = item.querySelector("title")?.textContent?.replace(/<!\[CDATA\[|\]\]>/g,"").trim()||"";
+        const link  = item.querySelector("link")?.textContent?.trim()||
+                      item.querySelector("link")?.getAttribute("href")||"#";
+        const pub   = item.querySelector("pubDate,published,updated")?.textContent?.trim()||"";
         const date  = pub ? new Date(pub).toLocaleDateString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "";
-        el.innerHTML = `
+        if(!title) continue;
+        el.innerHTML=`
           <a href="${link}" target="_blank" style="text-decoration:none">
-            <div style="font-size:11.5px;color:#ccddf0;line-height:1.5;margin-bottom:6px">${title}</div>
+            <div style="font-size:11px;color:#ccddf0;line-height:1.5;margin-bottom:5px">${title}</div>
             <div style="display:flex;justify-content:space-between">
               <span style="font-size:9px;color:#00c8ff">🔗 ${feed.name}</span>
               <span style="font-size:9px;color:#3a5060">${date}</span>
@@ -748,11 +834,14 @@ async function loadEUNews(){
       }catch(e){ continue; }
     }
   }
-  // All failed — show nothing, just collapse
-  document.getElementById("eu-body").style.display="none";
-  document.getElementById("eu-arrow").textContent="▼";
-  euLoaded = false;
+  // All failed — collapse silently
+  document.getElementById(id+"-body").style.display="none";
+  document.getElementById(id+"-arrow").textContent="▼";
+  loaded[id]=false;
 }
+
+// Preload all in background
+setTimeout(()=>{ Object.keys(NEWS_FEEDS).forEach(id=>{ fetchNews(id); loaded[id]=true; }); }, 1500);
 </script>
 
 </body>
