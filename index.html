@@ -441,7 +441,7 @@ document.getElementById("map").addEventListener("click",closePopup);
 
 
 <!-- Commodity Charts -->
-<div style="position:absolute;bottom:14px;left:14px;z-index:100;display:flex;flex-direction:column-reverse;gap:8px;max-height:calc(100% - 28px);overflow:visible;">
+<div style="position:absolute;bottom:14px;left:14px;z-index:100;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 80px);overflow-y:auto;overflow-x:visible;">
 
 
   <!-- AMMONIA -->
@@ -487,150 +487,6 @@ document.getElementById("map").addEventListener("click",closePopup);
     </div>
     </div>
   </div>
-
-</div>
-
-<script>
-(function(){
-
-  // ── AMMONIA DATA ──────────────────────────────────────────────────────
-  // confidence: 'verified' = confirmed by named source, 'approx' = interpolated ±10%
-  const NH3 = [
-    // 2022 — Russia/Ukraine crisis. Q3 peak >$1500 confirmed by ICIS
-    {q:"Q1'22", v:667,  c:"approx"},   // interpolated; war started Feb
-    {q:"Q2'22", v:1048, c:"approx"},   // interpolated between Q1 and peak
-    {q:"Q3'22", v:1400, c:"verified"}, // ICIS confirmed >$1500 peak → avg ~$1400 → €1400
-    {q:"Q4'22", v:784,  c:"approx"},   // sharp fall; interpolated
-    // 2023 — correction
-    {q:"Q1'23", v:421,  c:"approx"},
-    {q:"Q2'23", v:321,  c:"approx"},
-    {q:"Q3'23", v:349,  c:"approx"},
-    {q:"Q4'23", v:389,  c:"approx"},
-    // 2024
-    {q:"Q1'24", v:321,  c:"approx"},
-    {q:"Q2'24", v:333,  c:"approx"},
-    {q:"Q3'24", v:327,  c:"approx"},
-    {q:"Q4'24", v:410,  c:"approx"},
-    // 2025 — confirmed data from Intratec & IMARC
-    {q:"Q1'25", v:365,  c:"approx"},
-    {q:"Q2'25", v:375,  c:"approx"},
-    {q:"Q3'25", v:509,  c:"verified"}, // Intratec: Sep $604 CFR Europe → €509
-    {q:"Q4'25", v:600,  c:"verified"}, // IMARC: Dec $630/t Europe → €600
-    // 2026
-    {q:"Q1'26", v:667,  c:"verified"}, // S&P Global Platts: Mar $750 CFR NW Europe → €667
-  ];
-
-  // ── AN DATA ───────────────────────────────────────────────────────────
-  const AN = [
-    // 2022 — IndexBox confirms peak $772 EU export avg, +106% that year
-    {q:"Q1'22", v:380,  c:"approx"},
-    {q:"Q2'22", v:680,  c:"approx"},
-    {q:"Q3'22", v:735,  c:"verified"}, // IndexBox: $772 peak zone → €735 avg Q3
-    {q:"Q4'22", v:560,  c:"approx"},
-    // 2023-2024 — IndexBox: 2024 EU export avg $399 (-16.5% from 2023)
-    {q:"Q1'23", v:430,  c:"approx"},
-    {q:"Q2'23", v:320,  c:"approx"},
-    {q:"Q3'23", v:300,  c:"approx"},
-    {q:"Q4'23", v:290,  c:"approx"},
-    {q:"Q1'24", v:310,  c:"approx"},
-    {q:"Q2'24", v:360,  c:"approx"},
-    {q:"Q3'24", v:380,  c:"approx"},
-    {q:"Q4'24", v:370,  c:"approx"},
-    // 2025 — Chemanalyst & Intratec confirmed
-    {q:"Q1'25", v:390,  c:"approx"},
-    {q:"Q2'25", v:415,  c:"approx"},
-    {q:"Q3'25", v:465,  c:"verified"}, // Intratec: Sep $534 Europe → €485 (Q3 avg ~€465)
-    {q:"Q4'25", v:445,  c:"verified"}, // Chemanalyst: UK Q4 avg ~$485 → €445
-    // 2026
-    {q:"Q1'26", v:420,  c:"approx"},   // estimated; no confirmed Q1'26 AN data found
-  ];
-
-  function drawChart(canvasId, data, yTicks){
-    const canvas = document.getElementById(canvasId);
-    const dpr = window.devicePixelRatio||1;
-    const W=248, H=110;
-    canvas.width=W*dpr; canvas.height=H*dpr;
-    canvas.style.width=W+"px"; canvas.style.height=H+"px";
-    const ctx=canvas.getContext("2d");
-    ctx.scale(dpr,dpr);
-
-    const PAD={t:10,r:14,b:22,l:28};
-    const vals=data.map(d=>d.v);
-    const minV=Math.min(...vals)-50, maxV=Math.max(...vals)+50;
-    const n=data.length;
-
-    function xP(i){ return PAD.l+(i/(n-1))*(W-PAD.l-PAD.r); }
-    function yP(v){ return PAD.t+(1-(v-minV)/(maxV-minV))*(H-PAD.t-PAD.b); }
-
-    // Y grid
-    ctx.strokeStyle="rgba(255,255,255,.07)"; ctx.lineWidth=.5;
-    yTicks.forEach(v=>{
-      if(v<minV||v>maxV) return;
-      ctx.beginPath(); ctx.moveTo(PAD.l,yP(v)); ctx.lineTo(W-PAD.r,yP(v)); ctx.stroke();
-      ctx.fillStyle="#334455"; ctx.font="7px sans-serif"; ctx.textAlign="right";
-      ctx.fillText(v, PAD.l-3, yP(v)+2.5);
-    });
-
-    // Year separators
-    ctx.strokeStyle="rgba(100,160,255,.35)"; ctx.lineWidth=1; ctx.setLineDash([3,2]);
-    ["Q1'23","Q1'24","Q1'25","Q1'26"].forEach(q=>{
-      const i=data.findIndex(d=>d.q===q);
-      if(i>0){ ctx.beginPath(); ctx.moveTo(xP(i)-((W-PAD.l-PAD.r)/n*0.7)/2-1,PAD.t); ctx.lineTo(xP(i)-((W-PAD.l-PAD.r)/n*0.7)/2-1,H-PAD.b); ctx.stroke(); }
-    });
-    ctx.setLineDash([]);
-
-    // Bars
-    const barW=(W-PAD.l-PAD.r)/n*0.72;
-    data.forEach((d,i)=>{
-      const x=xP(i)-barW/2, y=yP(d.v), h=H-PAD.b-y;
-      if(d.c==="approx"){
-        ctx.fillStyle="rgba(255,170,0,.3)"; ctx.strokeStyle="rgba(255,170,0,.65)";
-      } else if(d.v===Math.max(...vals)){
-        ctx.fillStyle="rgba(255,60,60,.55)"; ctx.strokeStyle="rgba(255,60,60,.9)";
-      } else {
-        ctx.fillStyle="rgba(51,221,170,.38)"; ctx.strokeStyle="rgba(51,221,170,.8)";
-      }
-      ctx.lineWidth=.8;
-      ctx.fillRect(x,y,barW,h);
-      ctx.strokeRect(x,y,barW,h);
-
-      // Value label: always on verified, only on max/min for approx
-      const isMax=d.v===Math.max(...vals);
-      const isLast=i===n-1;
-      if(d.c==="verified"||isMax||isLast){
-        ctx.fillStyle=d.c==="approx"?"#aa8833":"#ccddf0";
-        ctx.font=isMax?"bold 7px sans-serif":"7px sans-serif";
-        ctx.textAlign="center";
-        // add ~ for approx
-        ctx.fillText((d.c==="approx"?"~":"")+"€"+d.v, xP(i), y-3);
-      }
-    });
-
-    // X labels
-    ctx.font="7px sans-serif"; ctx.textAlign="center";
-    data.forEach((d,i)=>{
-      if(d.q.startsWith("Q1")){
-        ctx.fillStyle="#556680";
-        ctx.fillText(d.q, xP(i), H-6);
-      }
-    });
-
-    // Year labels
-    ctx.fillStyle="#3a4a5a"; ctx.font="7.5px sans-serif"; ctx.textAlign="center";
-    ["2022","2023","2024","2025"].forEach(yr=>{
-      const qs=data.filter(d=>d.q.includes("'"+yr.slice(2)));
-      if(qs.length>=2){
-        const i1=data.indexOf(qs[0]), i2=data.indexOf(qs[qs.length-1]);
-        ctx.fillText(yr,(xP(i1)+xP(i2))/2,H-1);
-      }
-    });
-  }
-
-  drawChart("nh3-canvas", NH3, [300,600,900,1200]);
-  drawChart("an-canvas",  AN,  [300,400,500,600,700]);
-
-})();
-</script>
 
 
   <!-- GOLD -->
@@ -817,3 +673,146 @@ async function loadBrent(){
 </body>
 </html>
 </div>
+</div>
+
+<script>
+(function(){
+
+  // ── AMMONIA DATA ──────────────────────────────────────────────────────
+  // confidence: 'verified' = confirmed by named source, 'approx' = interpolated ±10%
+  const NH3 = [
+    // 2022 — Russia/Ukraine crisis. Q3 peak >$1500 confirmed by ICIS
+    {q:"Q1'22", v:667,  c:"approx"},   // interpolated; war started Feb
+    {q:"Q2'22", v:1048, c:"approx"},   // interpolated between Q1 and peak
+    {q:"Q3'22", v:1400, c:"verified"}, // ICIS confirmed >$1500 peak → avg ~$1400 → €1400
+    {q:"Q4'22", v:784,  c:"approx"},   // sharp fall; interpolated
+    // 2023 — correction
+    {q:"Q1'23", v:421,  c:"approx"},
+    {q:"Q2'23", v:321,  c:"approx"},
+    {q:"Q3'23", v:349,  c:"approx"},
+    {q:"Q4'23", v:389,  c:"approx"},
+    // 2024
+    {q:"Q1'24", v:321,  c:"approx"},
+    {q:"Q2'24", v:333,  c:"approx"},
+    {q:"Q3'24", v:327,  c:"approx"},
+    {q:"Q4'24", v:410,  c:"approx"},
+    // 2025 — confirmed data from Intratec & IMARC
+    {q:"Q1'25", v:365,  c:"approx"},
+    {q:"Q2'25", v:375,  c:"approx"},
+    {q:"Q3'25", v:509,  c:"verified"}, // Intratec: Sep $604 CFR Europe → €509
+    {q:"Q4'25", v:600,  c:"verified"}, // IMARC: Dec $630/t Europe → €600
+    // 2026
+    {q:"Q1'26", v:667,  c:"verified"}, // S&P Global Platts: Mar $750 CFR NW Europe → €667
+  ];
+
+  // ── AN DATA ───────────────────────────────────────────────────────────
+  const AN = [
+    // 2022 — IndexBox confirms peak $772 EU export avg, +106% that year
+    {q:"Q1'22", v:380,  c:"approx"},
+    {q:"Q2'22", v:680,  c:"approx"},
+    {q:"Q3'22", v:735,  c:"verified"}, // IndexBox: $772 peak zone → €735 avg Q3
+    {q:"Q4'22", v:560,  c:"approx"},
+    // 2023-2024 — IndexBox: 2024 EU export avg $399 (-16.5% from 2023)
+    {q:"Q1'23", v:430,  c:"approx"},
+    {q:"Q2'23", v:320,  c:"approx"},
+    {q:"Q3'23", v:300,  c:"approx"},
+    {q:"Q4'23", v:290,  c:"approx"},
+    {q:"Q1'24", v:310,  c:"approx"},
+    {q:"Q2'24", v:360,  c:"approx"},
+    {q:"Q3'24", v:380,  c:"approx"},
+    {q:"Q4'24", v:370,  c:"approx"},
+    // 2025 — Chemanalyst & Intratec confirmed
+    {q:"Q1'25", v:390,  c:"approx"},
+    {q:"Q2'25", v:415,  c:"approx"},
+    {q:"Q3'25", v:465,  c:"verified"}, // Intratec: Sep $534 Europe → €485 (Q3 avg ~€465)
+    {q:"Q4'25", v:445,  c:"verified"}, // Chemanalyst: UK Q4 avg ~$485 → €445
+    // 2026
+    {q:"Q1'26", v:420,  c:"approx"},   // estimated; no confirmed Q1'26 AN data found
+  ];
+
+  function drawChart(canvasId, data, yTicks){
+    const canvas = document.getElementById(canvasId);
+    const dpr = window.devicePixelRatio||1;
+    const W=248, H=110;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+"px"; canvas.style.height=H+"px";
+    const ctx=canvas.getContext("2d");
+    ctx.scale(dpr,dpr);
+
+    const PAD={t:10,r:14,b:22,l:28};
+    const vals=data.map(d=>d.v);
+    const minV=Math.min(...vals)-50, maxV=Math.max(...vals)+50;
+    const n=data.length;
+
+    function xP(i){ return PAD.l+(i/(n-1))*(W-PAD.l-PAD.r); }
+    function yP(v){ return PAD.t+(1-(v-minV)/(maxV-minV))*(H-PAD.t-PAD.b); }
+
+    // Y grid
+    ctx.strokeStyle="rgba(255,255,255,.07)"; ctx.lineWidth=.5;
+    yTicks.forEach(v=>{
+      if(v<minV||v>maxV) return;
+      ctx.beginPath(); ctx.moveTo(PAD.l,yP(v)); ctx.lineTo(W-PAD.r,yP(v)); ctx.stroke();
+      ctx.fillStyle="#334455"; ctx.font="7px sans-serif"; ctx.textAlign="right";
+      ctx.fillText(v, PAD.l-3, yP(v)+2.5);
+    });
+
+    // Year separators
+    ctx.strokeStyle="rgba(100,160,255,.35)"; ctx.lineWidth=1; ctx.setLineDash([3,2]);
+    ["Q1'23","Q1'24","Q1'25","Q1'26"].forEach(q=>{
+      const i=data.findIndex(d=>d.q===q);
+      if(i>0){ ctx.beginPath(); ctx.moveTo(xP(i)-((W-PAD.l-PAD.r)/n*0.7)/2-1,PAD.t); ctx.lineTo(xP(i)-((W-PAD.l-PAD.r)/n*0.7)/2-1,H-PAD.b); ctx.stroke(); }
+    });
+    ctx.setLineDash([]);
+
+    // Bars
+    const barW=(W-PAD.l-PAD.r)/n*0.72;
+    data.forEach((d,i)=>{
+      const x=xP(i)-barW/2, y=yP(d.v), h=H-PAD.b-y;
+      if(d.c==="approx"){
+        ctx.fillStyle="rgba(255,170,0,.3)"; ctx.strokeStyle="rgba(255,170,0,.65)";
+      } else if(d.v===Math.max(...vals)){
+        ctx.fillStyle="rgba(255,60,60,.55)"; ctx.strokeStyle="rgba(255,60,60,.9)";
+      } else {
+        ctx.fillStyle="rgba(51,221,170,.38)"; ctx.strokeStyle="rgba(51,221,170,.8)";
+      }
+      ctx.lineWidth=.8;
+      ctx.fillRect(x,y,barW,h);
+      ctx.strokeRect(x,y,barW,h);
+
+      // Value label: always on verified, only on max/min for approx
+      const isMax=d.v===Math.max(...vals);
+      const isLast=i===n-1;
+      if(d.c==="verified"||isMax||isLast){
+        ctx.fillStyle=d.c==="approx"?"#aa8833":"#ccddf0";
+        ctx.font=isMax?"bold 7px sans-serif":"7px sans-serif";
+        ctx.textAlign="center";
+        // add ~ for approx
+        ctx.fillText((d.c==="approx"?"~":"")+"€"+d.v, xP(i), y-3);
+      }
+    });
+
+    // X labels
+    ctx.font="7px sans-serif"; ctx.textAlign="center";
+    data.forEach((d,i)=>{
+      if(d.q.startsWith("Q1")){
+        ctx.fillStyle="#556680";
+        ctx.fillText(d.q, xP(i), H-6);
+      }
+    });
+
+    // Year labels
+    ctx.fillStyle="#3a4a5a"; ctx.font="7.5px sans-serif"; ctx.textAlign="center";
+    ["2022","2023","2024","2025"].forEach(yr=>{
+      const qs=data.filter(d=>d.q.includes("'"+yr.slice(2)));
+      if(qs.length>=2){
+        const i1=data.indexOf(qs[0]), i2=data.indexOf(qs[qs.length-1]);
+        ctx.fillText(yr,(xP(i1)+xP(i2))/2,H-1);
+      }
+    });
+  }
+
+  drawChart("nh3-canvas", NH3, [300,600,900,1200]);
+  drawChart("an-canvas",  AN,  [300,400,500,600,700]);
+
+})();
+</script>
