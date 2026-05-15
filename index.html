@@ -220,7 +220,7 @@ const COUNTRY_MAP={
 
 async function fetchWeather(city){
   try{
-    const url=`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=auto&forecast_days=7`;
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,weathercode&hourly=temperature_2m,weathercode,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=auto&forecast_days=2`;
     const d=await(await fetch(url)).json();
     const cur=d.current,day=d.daily;
     const temp=Math.round(cur.temperature_2m);
@@ -237,7 +237,69 @@ async function fetchWeather(city){
       ab.className=`abanner show ${lv}`;
       ab.innerHTML=(lv==="crit"?"🔴 ":"⚠️ ")+"<div>"+msgs.join("<br>")+"</div>";
     }
-    // Forecast 7 days
+    // ── 24h hourly forecast strip ────────────────────────────────────────
+    const hourly = d.hourly;
+    const nowIso = new Date().toISOString().slice(0,13); // "2026-05-15T14"
+    // Find current hour index in hourly array
+    let hStart = hourly.time.findIndex(t => t.startsWith(nowIso));
+    if(hStart < 0) hStart = 0;
+    // Pick 9 slots: now + every 3h for next 24h
+    const hSlots = [];
+    for(let i=0; i<=8; i++){
+      const idx = hStart + i*3;
+      if(idx < hourly.time.length){
+        const t = hourly.time[idx];
+        const hr = parseInt(t.slice(11,13));
+        const label = i===0 ? "Ahora" : (hr<10?"0"+hr:hr)+"h";
+        hSlots.push({
+          label,
+          temp: Math.round(hourly.temperature_2m[idx]),
+          code: hourly.weathercode[idx],
+          pop:  hourly.precipitation_probability ? hourly.precipitation_probability[idx] : null,
+        });
+      }
+    }
+
+    // Determine color for temp bar
+    const hTemps = hSlots.map(s=>s.temp);
+    const hMin = Math.min(...hTemps), hMax = Math.max(...hTemps);
+    function tempColor(t){
+      if(t<=0)   return "#88ccff";
+      if(t<=10)  return "#aaddff";
+      if(t<=20)  return "#44ddaa";
+      if(t<=30)  return "#ffcc44";
+      if(t<=38)  return "#ff8844";
+      return "#ff4444";
+    }
+    function rainColor(p){
+      if(!p) return "transparent";
+      if(p<20) return "rgba(100,180,255,.15)";
+      if(p<50) return "rgba(100,180,255,.3)";
+      if(p<80) return "rgba(100,180,255,.5)";
+      return "rgba(100,180,255,.75)";
+    }
+
+    let hourlyHtml = `
+      <div style="margin-bottom:12px">
+        <div class="fct">🕐 Próximas 24 horas</div>
+        <div style="display:grid;grid-template-columns:repeat(${hSlots.length},1fr);gap:3px">`;
+
+    hSlots.forEach((s,i)=>{
+      const isNow = i===0;
+      const barH = hMax===hMin ? 50 : Math.round(20 + ((s.temp-hMin)/(hMax-hMin))*40);
+      hourlyHtml += `
+          <div style="text-align:center;background:${isNow?"rgba(0,200,255,.08)":"rgba(255,255,255,.03)"};border-radius:7px;padding:5px 2px;border:${isNow?"1px solid rgba(0,200,255,.3)":"1px solid transparent"};position:relative;overflow:hidden">
+            ${s.pop!==null && s.pop>=20 ? `<div style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(s.pop*0.4)}%;background:${rainColor(s.pop)};border-radius:0 0 6px 6px"></div>` : ""}
+            <div style="font-size:8px;color:${isNow?"#00c8ff":"#6680a0"};margin-bottom:3px;font-weight:${isNow?"700":"400"}">${s.label}</div>
+            <div style="font-size:16px;line-height:1;margin-bottom:3px">${emoji(s.code)}</div>
+            <div style="font-size:10px;font-weight:700;color:${tempColor(s.temp)}">${s.temp}°</div>
+            ${s.pop!==null && s.pop>=20 ? `<div style="font-size:8px;color:#64b4ff;margin-top:2px">${s.pop}%</div>` : "<div style='font-size:8px'>&nbsp;</div>"}
+          </div>`;
+    });
+
+    hourlyHtml += `</div></div>`;
+
+    // ── 7-day forecast ────────────────────────────────────────────────────
     const today=new Date();
     let fc='<div class="fct">📅 Pronóstico 7 días</div><div class="fcw">';
     for(let i=0;i<7;i++){
@@ -262,7 +324,7 @@ async function fetchWeather(city){
         <div class="card"><div class="v hi">${tmax}°C</div><div class="l">🔺 Máxima</div></div>
         <div class="card"><div class="v lo">${tmin}°C</div><div class="l">🔻 Mínima</div></div>
         <div class="card"><div class="v rn">${rain} mm</div><div class="l">🌧️ Lluvia hoy</div></div>
-      </div>${fc}`;
+      </div>${hourlyHtml}${fc}`;
     // Local time
     const tz=d.timezone;
     const localTime=new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone:tz});
