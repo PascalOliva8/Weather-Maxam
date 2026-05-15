@@ -536,16 +536,33 @@ document.getElementById("map").addEventListener("click",closePopup);
 </div>
 
 <script>
+const leftQueue = [];
+
 function toggle(id){
-  const body=document.getElementById(id+"-body");
-  const arrow=document.getElementById(id+"-arrow");
+  const body  = document.getElementById(id+"-body");
+  const arrow = document.getElementById(id+"-arrow");
   if(!body) return;
-  const open=body.style.display==="none";
-  body.style.display=open?"block":"none";
-  arrow.style.transform=open?"rotate(0deg)":"rotate(180deg)";
+  const open = body.style.display === "none";
+
   if(open){
+    if(!leftQueue.includes(id)) leftQueue.push(id);
+    // If more than 2 open, close the oldest
+    if(leftQueue.length > 2){
+      const oldest = leftQueue.shift();
+      const ob=document.getElementById(oldest+"-body");
+      const oa=document.getElementById(oldest+"-arrow");
+      if(ob) ob.style.display="none";
+      if(oa) oa.style.transform="rotate(180deg)";
+    }
+    body.style.display="block";
+    arrow.style.transform="rotate(0deg)";
     if(id==="gold")  drawBarChart("gold-canvas",  GOLD_DATA,  [1000,2000,3000,4000,5000], "#ffd700");
     if(id==="brent") drawBarChart("brent-canvas", BRENT_DATA, [40,60,80,100,120],          "#ff9944");
+  } else {
+    const idx=leftQueue.indexOf(id);
+    if(idx>-1) leftQueue.splice(idx,1);
+    body.style.display="none";
+    arrow.style.transform="rotate(180deg)";
   }
 }
 
@@ -806,15 +823,32 @@ const PROXIES = [
 ];
 
 const loaded = {};
+const RIGHT_IDS = ["eu","us","sa","cn","me","jp","au","af","eurusd","eurgbp"];
 
-function toggleNews(id){
+function toggleRight(id){
+  // Close all others in the right panel
+  RIGHT_IDS.forEach(other=>{
+    if(other!==id){
+      const b=document.getElementById(other+"-body");
+      const a=document.getElementById(other+"-arrow");
+      if(b) b.style.display="none";
+      if(a) a.textContent="▼";
+    }
+  });
   const body  = document.getElementById(id+"-body");
   const arrow = document.getElementById(id+"-arrow");
+  if(!body) return;
   const open  = body.style.display === "none";
   body.style.display = open ? "block" : "none";
   arrow.textContent  = open ? "▲" : "▼";
-  if(open && !loaded[id]){ fetchNews(id); loaded[id]=true; }
+  if(open && !loaded[id]){
+    if(["eu","us","sa","cn","me","jp","au","af"].includes(id)) fetchNews(id);
+    if(["eurusd","eurgbp"].includes(id)) loadFX(id);
+    loaded[id]=true;
+  }
 }
+// Keep toggleNews and toggleFX as aliases
+function toggleNews(id){ toggleRight(id); }
 
 async function fetchNews(id){
   const el    = document.getElementById(id+"-content");
@@ -895,22 +929,7 @@ setTimeout(()=>{ Object.keys(NEWS_FEEDS).forEach(id=>{ fetchNews(id); loaded[id]
 </div>
 
 <script>
-const fxLoaded = {};
-function toggleFX(id){
-  const ids=["eurusd","eurgbp"];
-  ids.forEach(other=>{
-    if(other!==id){
-      document.getElementById(other+"-body").style.display="none";
-      document.getElementById(other+"-arrow").textContent="▼";
-    }
-  });
-  const body=document.getElementById(id+"-body");
-  const arrow=document.getElementById(id+"-arrow");
-  const open=body.style.display==="none";
-  body.style.display=open?"block":"none";
-  arrow.textContent=open?"▲":"▼";
-  if(open&&!fxLoaded[id]){ loadFX(id); fxLoaded[id]=true; }
-}
+function toggleFX(id){ toggleRight(id); }
 
 async function loadFX(id){
   const quote = id==="eurusd"?"USD":"GBP";
