@@ -897,6 +897,13 @@ setTimeout(()=>{ Object.keys(NEWS_FEEDS).forEach(id=>{ fetchNews(id); loaded[id]
 <script>
 const fxLoaded = {};
 function toggleFX(id){
+  const ids=["eurusd","eurgbp"];
+  ids.forEach(other=>{
+    if(other!==id){
+      document.getElementById(other+"-body").style.display="none";
+      document.getElementById(other+"-arrow").textContent="▼";
+    }
+  });
   const body=document.getElementById(id+"-body");
   const arrow=document.getElementById(id+"-arrow");
   const open=body.style.display==="none";
