@@ -506,91 +506,143 @@ document.getElementById("map").addEventListener("click",closePopup);
 <!-- Commodity Charts -->
 <div style="position:absolute;bottom:14px;left:14px;z-index:100;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 80px);overflow-y:auto;overflow-x:visible;">
 
-
   <!-- AMMONIA -->
-  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;overflow:hidden;width:272px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
+  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;overflow:hidden;width:285px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
     <div onclick="toggle('nh3')" style="padding:9px 13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
       <div>
         <div style="font-size:10px;font-weight:700;color:#ccddf0">🧪 Amoniaco CFR NW Europa</div>
-        <div style="font-size:8px;color:#556680;margin-top:1px">EUR/t · <span style="color:#ffaa00;font-weight:600">Q = trimestre</span> · Materia prima del AN</div>
+        <div style="font-size:8px;color:#556680;margin-top:1px">EUR/t · Materia prima del AN</div>
       </div>
       <div id="nh3-arrow" style="font-size:12px;color:#556680;transition:transform .2s">▲</div>
     </div>
-    <div id="nh3-body" style="padding:0 13px 10px;display:none">
-    <canvas id="nh3-canvas" style="display:block"></canvas>
-    <div style="margin-top:5px">
-      <div style="display:flex;gap:8px;font-size:7.5px;margin-bottom:3px">
-        <span style="color:#33ddaa">■ Verificado</span>
-        <span style="color:#ffaa00">■ Aproximado ±10%</span>
-        <span style="color:#ff4444">■ Verificado (pico)</span>
+    <div id="nh3-body" style="padding:0 13px 12px;display:none">
+      <!-- Current price -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px">
+        <div>
+          <div style="font-size:11px;color:#556680">Último dato mensual</div>
+          <div style="font-size:9px;color:#3a5060;margin-top:2px">Abr 2026 · Intratec/IMARC</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:26px;font-weight:800;color:#33ddaa">€667</div>
+          <div style="font-size:9px;color:#556680">/tonelada</div>
+        </div>
       </div>
-      <div style="font-size:7px;color:#3a5060">S&P Global Platts · Intratec · IMARC · Chemanalyst</div>
-    </div>
+      <!-- Toggle chart -->
+      <div onclick="toggleSubChart('nh3-chart')" style="font-size:9px;color:#00c8ff;cursor:pointer;text-align:center;margin-bottom:8px;user-select:none" id="nh3-chart-btn">📊 Ver histórico trimestral ▼</div>
+      <div id="nh3-chart" style="display:none">
+        <canvas id="nh3-canvas" style="display:block"></canvas>
+        <div style="margin-top:5px">
+          <div style="display:flex;gap:8px;font-size:7.5px;margin-bottom:3px">
+            <span style="color:#33ddaa">■ Verificado</span>
+            <span style="color:#ffaa00">■ Aprox ±10%</span>
+            <span style="color:#ff4444">■ Pico</span>
+          </div>
+          <div style="font-size:7px;color:#3a5060">S&P Global Platts · Intratec · IMARC · Chemanalyst</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- AMMONIUM NITRATE -->
-  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;overflow:hidden;width:272px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
+  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;overflow:hidden;width:285px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
     <div onclick="toggle('an')" style="padding:9px 13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
       <div>
         <div style="font-size:10px;font-weight:700;color:#ccddf0">⚗️ Nitrato Amónico Europa</div>
-        <div style="font-size:8px;color:#556680;margin-top:1px">EUR/t · <span style="color:#ffaa00;font-weight:600">Q = trimestre</span> · Precio explosivo base</div>
+        <div style="font-size:8px;color:#556680;margin-top:1px">EUR/t · Precio explosivo base</div>
       </div>
       <div id="an-arrow" style="font-size:12px;color:#556680;transition:transform .2s">▲</div>
     </div>
-    <div id="an-body" style="padding:0 13px 10px;display:none">
-    <canvas id="an-canvas" style="display:block"></canvas>
-    <div style="margin-top:5px">
-      <div style="display:flex;gap:8px;font-size:7.5px;margin-bottom:3px">
-        <span style="color:#33ddaa">■ Verificado</span>
-        <span style="color:#ffaa00">■ Aproximado ±10%</span>
-        <span style="color:#ff4444">■ Verificado (pico)</span>
+    <div id="an-body" style="padding:0 13px 12px;display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px">
+        <div>
+          <div style="font-size:11px;color:#556680">Último dato mensual</div>
+          <div style="font-size:9px;color:#3a5060;margin-top:2px">Abr 2026 · Chemanalyst/Intratec</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:26px;font-weight:800;color:#33ddaa">€409</div>
+          <div style="font-size:9px;color:#556680">/tonelada</div>
+        </div>
       </div>
-      <div style="font-size:7px;color:#3a5060">IndexBox EU · Chemanalyst · Intratec</div>
-    </div>
+      <div onclick="toggleSubChart('an-chart')" style="font-size:9px;color:#00c8ff;cursor:pointer;text-align:center;margin-bottom:8px;user-select:none" id="an-chart-btn">📊 Ver histórico trimestral ▼</div>
+      <div id="an-chart" style="display:none">
+        <canvas id="an-canvas" style="display:block"></canvas>
+        <div style="margin-top:5px">
+          <div style="display:flex;gap:8px;font-size:7.5px;margin-bottom:3px">
+            <span style="color:#33ddaa">■ Verificado</span>
+            <span style="color:#ffaa00">■ Aprox ±10%</span>
+            <span style="color:#ff4444">■ Pico</span>
+          </div>
+          <div style="font-size:7px;color:#3a5060">IndexBox EU · Chemanalyst · Intratec</div>
+        </div>
+      </div>
     </div>
   </div>
 
-
   <!-- GOLD -->
-  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;overflow:hidden;width:265px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
+  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;overflow:hidden;width:285px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
     <div onclick="toggle('gold')" style="padding:9px 13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
       <div>
         <div style="font-size:10px;font-weight:700;color:#ccddf0">🥇 Oro · XAU/USD</div>
-        <div style="font-size:8px;color:#556680;margin-top:1px">USD/oz · <span style="color:#ffaa00;font-weight:600">Q = trimestre</span> · LBMA London Fix</div>
+        <div style="font-size:8px;color:#556680;margin-top:1px">EUR/g · LBMA London Fix</div>
       </div>
       <div id="gold-arrow" style="font-size:12px;color:#556680;transition:transform .2s">▲</div>
     </div>
-    <div id="gold-body" style="padding:0 13px 10px;display:none">
-      <canvas id="gold-canvas" style="display:block"></canvas>
-      <div style="margin-top:5px">
-        <div style="display:flex;gap:8px;font-size:7.5px;margin-bottom:3px">
-          <span style="color:#33ddaa">■ Verificado</span>
-          <span style="color:#ffaa00">■ Aproximado ±5%</span>
+    <div id="gold-body" style="padding:0 13px 12px;display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px">
+        <div>
+          <div style="font-size:11px;color:#556680">Cierre de ayer</div>
+          <div style="font-size:9px;color:#3a5060;margin-top:2px" id="gold-date">Cargando...</div>
         </div>
-        <div style="font-size:7px;color:#3a5060">World Gold Council · LBMA · StatMuse · APMEX</div>
+        <div style="text-align:right">
+          <div style="font-size:26px;font-weight:800;color:#ffd700" id="gold-live">⏳</div>
+          <div style="font-size:9px;color:#556680">EUR/g · <span id="gold-chg"></span></div>
+        </div>
+      </div>
+      <div onclick="toggleSubChart('gold-chart')" style="font-size:9px;color:#00c8ff;cursor:pointer;text-align:center;margin-bottom:8px;user-select:none" id="gold-chart-btn">📊 Ver histórico trimestral ▼</div>
+      <div id="gold-chart" style="display:none">
+        <canvas id="gold-canvas" style="display:block"></canvas>
+        <div style="margin-top:5px">
+          <div style="display:flex;gap:8px;font-size:7.5px;margin-bottom:3px">
+            <span style="color:#33ddaa">■ Verificado</span>
+            <span style="color:#ffaa00">■ Aprox ±5%</span>
+          </div>
+          <div style="font-size:7px;color:#3a5060">World Gold Council · LBMA · StatMuse · APMEX</div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- BRENT -->
-  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;overflow:hidden;width:265px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
+  <div style="background:rgba(7,16,31,.92);border:1px solid #1a3360;border-radius:11px;overflow:hidden;width:285px;box-shadow:0 4px 22px rgba(0,40,120,.4)">
     <div onclick="toggle('brent')" style="padding:9px 13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
       <div>
         <div style="font-size:10px;font-weight:700;color:#ccddf0">🛢️ Petróleo Brent</div>
-        <div style="font-size:8px;color:#556680;margin-top:1px">USD/bbl · <span style="color:#ffaa00;font-weight:600">Q = trimestre</span> · EIA / ICE</div>
+        <div style="font-size:8px;color:#556680;margin-top:1px">USD/bbl · EIA / ICE</div>
       </div>
       <div id="brent-arrow" style="font-size:12px;color:#556680;transition:transform .2s">▲</div>
     </div>
-    <div id="brent-body" style="padding:0 13px 10px;display:none">
-      <canvas id="brent-canvas" style="display:block"></canvas>
-      <div style="margin-top:5px">
-        <div style="display:flex;gap:8px;font-size:7.5px;margin-bottom:3px">
-          <span style="color:#33ddaa">■ Verificado</span>
-          <span style="color:#ffaa00">■ Aproximado ±5%</span>
-          <span style="color:#ff4444">■ Verificado (pico)</span>
+    <div id="brent-body" style="padding:0 13px 12px;display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px">
+        <div>
+          <div style="font-size:11px;color:#556680">Cierre de ayer</div>
+          <div style="font-size:9px;color:#3a5060;margin-top:2px" id="brent-date">Cargando...</div>
         </div>
-        <div style="font-size:7px;color:#3a5060">EIA · Statista · Trading Economics · FRED</div>
+        <div style="text-align:right">
+          <div style="font-size:26px;font-weight:800;color:#ff9944" id="brent-live">⏳</div>
+          <div style="font-size:9px;color:#556680">USD/bbl · <span id="brent-chg"></span></div>
+        </div>
+      </div>
+      <div onclick="toggleSubChart('brent-chart')" style="font-size:9px;color:#00c8ff;cursor:pointer;text-align:center;margin-bottom:8px;user-select:none" id="brent-chart-btn">📊 Ver histórico trimestral ▼</div>
+      <div id="brent-chart" style="display:none">
+        <canvas id="brent-canvas" style="display:block"></canvas>
+        <div style="margin-top:5px">
+          <div style="display:flex;gap:8px;font-size:7.5px;margin-bottom:3px">
+            <span style="color:#33ddaa">■ Verificado</span>
+            <span style="color:#ffaa00">■ Aprox ±5%</span>
+            <span style="color:#ff4444">■ Pico</span>
+          </div>
+          <div style="font-size:7px;color:#3a5060">EIA · Statista · Trading Economics · FRED</div>
+        </div>
       </div>
     </div>
   </div>
@@ -599,6 +651,73 @@ document.getElementById("map").addEventListener("click",closePopup);
 
 <script>
 const leftQueue = [];
+
+function toggleSubChart(id){
+  const el  = document.getElementById(id);
+  const btn = document.getElementById(id+"-btn");
+  if(!el) return;
+  const open = el.style.display === "none";
+  el.style.display = open ? "block" : "none";
+  if(btn) btn.textContent = (open ? "📊 Ocultar histórico trimestral ▲" : "📊 Ver histórico trimestral ▼");
+  if(open){
+    if(id==="gold-chart")  drawBarChart("gold-canvas",  GOLD_DATA,  [1000,2000,3000,4000,5000], "#ffd700");
+    if(id==="brent-chart") drawBarChart("brent-canvas", BRENT_DATA, [40,60,80,100,120],          "#ff9944");
+    if(id==="nh3-chart")   drawBarChart("nh3-canvas",   NH3,        [300,600,900,1200],           "#33ddaa");
+    if(id==="an-chart")    drawBarChart("an-canvas",    AN,         [300,400,500,600,700],        "#00c8ff");
+  }
+}
+
+async function loadLivePrices(){
+  // GOLD via freegoldapi — convert USD/oz to EUR/g
+  try{
+    // Get EUR/USD rate from Frankfurter
+    let eurUsd = 1.08; // fallback
+    try{
+      const fxRes = await fetch("https://api.frankfurter.dev/v2/rates?base=EUR&quotes=USD");
+      const fxData = await fxRes.json();
+      const rate = Array.isArray(fxData)
+        ? (fxData.find(d=>d.quote==="USD")||{}).rate
+        : fxData?.rates?.USD;
+      if(rate) eurUsd = rate;
+    }catch(e2){}
+
+    const res  = await fetch("https://freegoldapi.com/data/latest.csv");
+    const text = await res.text();
+    const lines= text.trim().split("\n").filter(l=>l.trim()&&!l.startsWith("date"));
+    const rows = lines.slice(-2).map(l=>{ const p=l.split(","); return {date:p[0].trim(),price:parseFloat(p[1])}; }).filter(r=>!isNaN(r.price));
+    if(rows.length>=2){
+      const latest=rows[rows.length-1], prev=rows[rows.length-2];
+      // Convert: USD/oz ÷ 31.1035g ÷ EUR/USD = EUR/g
+      const eurG  = (latest.price / 31.1035 / eurUsd);
+      const eurGp = (prev.price   / 31.1035 / eurUsd);
+      const chg=eurG-eurGp, pct=(chg/eurGp*100).toFixed(1);
+      document.getElementById("gold-live").textContent="€"+eurG.toFixed(2);
+      document.getElementById("gold-date").textContent=latest.date+" · 1€="+(1/eurUsd).toFixed(4)+"USD";
+      document.getElementById("gold-chg").innerHTML='<span style="color:'+(chg>=0?"#33ddaa":"#ff5566")+'">'+(chg>=0?"▲":"▼")+Math.abs(chg).toFixed(2)+' ('+pct+'%)</span>';
+    }
+  }catch(e){
+    document.getElementById("gold-live").textContent="~€151";
+    document.getElementById("gold-date").textContent="freegoldapi.com";
+  }
+  // BRENT via FRED
+  try{
+    const res  = await fetch("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILBRENTEU");
+    const text = await res.text();
+    const lines= text.trim().split("\n").filter(l=>l.trim()&&!l.startsWith("DATE"));
+    const rows = lines.slice(-2).map(l=>{ const p=l.split(","); return {date:p[0].trim(),price:parseFloat(p[1])}; }).filter(r=>!isNaN(r.price)&&r.price>0);
+    if(rows.length>=2){
+      const latest=rows[rows.length-1], prev=rows[rows.length-2];
+      const chg=latest.price-prev.price, pct=(chg/prev.price*100).toFixed(1);
+      document.getElementById("brent-live").textContent="$"+latest.price.toFixed(1);
+      document.getElementById("brent-date").textContent=latest.date;
+      document.getElementById("brent-chg").innerHTML='<span style="color:'+(chg>=0?"#33ddaa":"#ff5566")+'">'+(chg>=0?"▲":"▼")+Math.abs(chg).toFixed(1)+' ('+pct+'%)</span>';
+    }
+  }catch(e){
+    document.getElementById("brent-live").textContent="~$107";
+    document.getElementById("brent-date").textContent="EIA / FRED";
+  }
+}
+setTimeout(loadLivePrices, 500);
 
 function toggle(id){
   const body  = document.getElementById(id+"-body");
@@ -618,8 +737,7 @@ function toggle(id){
     }
     body.style.display="block";
     arrow.style.transform="rotate(0deg)";
-    if(id==="gold")  drawBarChart("gold-canvas",  GOLD_DATA,  [1000,2000,3000,4000,5000], "#ffd700");
-    if(id==="brent") drawBarChart("brent-canvas", BRENT_DATA, [40,60,80,100,120],          "#ff9944");
+
   } else {
     const idx=leftQueue.indexOf(id);
     if(idx>-1) leftQueue.splice(idx,1);
